@@ -9,8 +9,23 @@ from time import time
 import os
 from copy import deepcopy
 import pickle
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 colors_countries = ['#00A0B0','#6A4A3C','#CC333F','#EB6841','#EDC951'] #Ocean Five from COLOURlovers.
+color_balancing = '#2B2825' #Conspicuous Creep from COLOURlovers.
+color_RES = '#CACF43'
+color_import = '#FCF8BC'
+color_export = '#0B8C8F'
+color_curtailment = '#D6156C'
+
+color_load = (.9,.5,.5,.3)
+color_slow = (0.2,0.,0.,1)
+color_medium = (.5,0,0,1)
+color_fast = (0.8,0,0,1)
+color_wind = (0.5,0.7,1.,1)
+color_solar = (1.,0.8,0,1)
+color_edge = (.2,.2,.2)
+#color_RES = (0.4,.65,0.25)
 
 class node:
     def __init__(self,fileName,ID,setup,name):
@@ -344,8 +359,8 @@ def plot_ts(node,F):
 #
 # data = plot_generation_summary_vs_year(year=linspace(1990,2050,21),node_id=3,lapse=None)
 #
-def plot_generation_summary_vs_year(year=linspace(1990,2050,5),node_id=3,lapse=50*24,data=None):
-    """ Very complecated function. Needs cleaning."""
+def plot_generation_summary_vs_year(year=linspace(1985,2053,21),node_id=3,lapse=50*24,data=None):
+    """ Very complicated function. Needs cleaning."""
 
 
     if data==None:
@@ -380,9 +395,9 @@ def plot_generation_summary_vs_year(year=linspace(1990,2050,5),node_id=3,lapse=5
             sys.stdout.flush()
             Nodes,F=runtimeseries(Nodes,F,P,q,G,h,A,coop=0,lapse=lapse)
 
-            #add_colored_import(Nodes, F, node_id=None, lapse=lapse)
-            for node in Nodes:
-                node.colored_import=zeros(node.nhours)
+            add_colored_import(Nodes, F, node_id=None, lapse=lapse)
+            #for node in Nodes:
+            #    node.colored_import=zeros(node.nhours)
 
             data.append(deepcopy(Nodes))
     else:
@@ -405,8 +420,6 @@ def plot_generation_summary_vs_year(year=linspace(1990,2050,5),node_id=3,lapse=5
         curtailment_av[i] = data[i][node_id].curtailment[:lapse].mean()/data[i][node_id].mean
         
         #Colored import
-        print mean(data[i][node_id].colored_import.transpose()[:lapse], axis=0)
-        print colored_import_av[i]
         colored_import_av[i] = mean(data[i][node_id].colored_import.transpose()[:lapse], axis=0)/data[i][node_id].mean
         
         
@@ -434,18 +447,35 @@ def plot_generation_summary_vs_year(year=linspace(1990,2050,5),node_id=3,lapse=5
 
     figure(1); clf()
 
-    title(Nodes[node_id].name)
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
 
-    fill_between(year,balancing_av,color=(.5,.0,.0),lw=0)
-    fill_between(year,RES_local_av+balancing_av,balancing_av,color=(.0,.5,.0),lw=0)
-    fill_between(year,import_av+RES_local_av+balancing_av,RES_local_av+balancing_av,color=(.0,.5,.5),lw=0)
-    fill_between(year,export_av+import_av+RES_local_av+balancing_av,import_av+RES_local_av+balancing_av,color=(.5,.0,.5),lw=0)
-    fill_between(year,curtailment_av+export_av+import_av+RES_local_av+balancing_av,export_av+import_av+RES_local_av+balancing_av,color=(.5,.5,.0),lw=0)
+    ax1 = axes()
 
-    axis(ymin=0, ymax =2., xmin=amin(year), xmax=amax(year))
-    xlabel('Year')
-    ylabel('Power [local av.l.h.]')
+    fill_between(year,balancing_av,color=color_balancing,edgecolor='k',lw=.5)
+    fill_between(year,RES_local_av+balancing_av,balancing_av,color=color_RES,edgecolor='k',lw=.5)
+    fill_between(year,import_av+RES_local_av+balancing_av,RES_local_av+balancing_av,color=color_import,edgecolor='k',lw=.5)
+    fill_between(year,export_av+import_av+RES_local_av+balancing_av,import_av+RES_local_av+balancing_av,color=color_export,edgecolor='k',lw=.5)
+    fill_between(year,curtailment_av+export_av+import_av+RES_local_av+balancing_av,export_av+import_av+RES_local_av+balancing_av,color=color_curtailment,edgecolor='k',lw=.5)
 
+    axis(ymin=0, ymax =2.05, xmin=amin(year), xmax=amax(year))
+    yticks(arange(0,2.05,.5))
+    xlabel('Reference year')
+    ylabel('Power [av.l.h.]')
+
+    divider = make_axes_locatable(plt.gca())
+    ax2 = divider.append_axes("right", "0%", pad="0%")
+    #ax2 = axes(ax1.get_position())
+
+    #ax2 = twinx()
+    ax2.yaxis.set_ticks_position('right')
+    ax2.yaxis.set_label_position('right')
+    axis(ymin=0,ymax=2.05)
+    ylabel('[GW]')
+    xticks([0],[''])
+    yticks(ax1.get_yticks(),around(ax1.get_yticks()*Nodes[node_id].mean/1e3,1))
+
+    tight_layout(pad=.3)
     savename = 'plot_generation_summary_vs_year_Stacked_' + Nodes[node_id].name.replace(' ','_') + '.png'
     save_figure(savename)
 
@@ -492,7 +522,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
         figure(1); clf()
 
         gcf().set_dpi(300)
-        gcf().set_size_inches([4.75,6])
+        gcf().set_size_inches([5.25,3.5])
 
         ax1 = axes([.11,.565,.885,.42])
         #subplot(211)

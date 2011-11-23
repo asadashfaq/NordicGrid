@@ -345,6 +345,8 @@ def plot_ts(node,F):
 # data = plot_generation_summary_vs_year(year=linspace(1990,2050,21),node_id=3,lapse=None)
 #
 def plot_generation_summary_vs_year(year=linspace(1990,2050,5),node_id=3,lapse=50*24,data=None):
+    """ Very complecated function. Needs cleaning."""
+
 
     if data==None:
         Nodes=makenodes()

@@ -17,76 +17,9 @@ import shortcuts
 from Database_v1 import get_data_countries, get_data_regions
 from MortenStorage import get_policy_2_storage
 
-def get_ISET_country_data(ISO='DK',path='./data/'):
-    """Returns data for a specific country. The country is specified using ISO two letter names. For a list of names use get_ISET_country_names()."""
-    
-    if not valid_ISO(ISO):
-        sys.exit("Error (43nlksd): No such country ISO ({0}). For a list of names use get_ISET_country_names().".format(ISO))
-    
-    filename = ISO + '.npz'
-    
-    try:
-        #Load the data file if it exists:
-        npzfile = np.load(path + filename)
-        print 'Loaded file: ', path + filename
-        sys.stdout.flush()
-        
-    except IOError:
-        print 'Datafile does not exist:', path + filename
-        print 'Trying to download data from pepsi...'
-        sys.stdout.flush()
-        try: 
-            #Normalized data: t, l, Gw, Gs, datetime_offset, datalabels = get_data_countries(schema='norm_agg_avg_1hour_pdata_caps_eu2020',localhost=True);
-            t, L, GW, GS, datetime_offset, datalabels = get_data_countries(localhost=True);
-        except:
-            sys.exit("Error (sdf3dz1): Could not connect to pepsi. Setup ssh access first: ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk")
-            
-        #Save all country files:
-        for i in arange(len(datalabels)):
-            ISO_ = ISET2ISO_country_codes(datalabels[i])
-            filename_ =  ISO_ + '.npz'
-            np.savez(path + filename_,t=t, L=L[i], GW=GW[i], GS=GS[i], datetime_offset=datetime_offset, datalabel=ISO_)
-            print 'Saved file: ', path + filename_
-            sys.stdout.flush()
-         
-        #Load the relevant file now that it has been created:       
-        npzfile = np.load(path + filename)
-        print 'Loaded file: ', path + filename
-        sys.stdout.flush()
-        
-    return npzfile['t'], npzfile['L'], npzfile['GW'], npzfile['GS'], npzfile['datetime_offset'], npzfile['datalabel']
 
-def valid_ISO(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
 
-    table = np.load(path+filename)
-    
-    return (ISO in table['ISO'])
-    
-def ISO2ISET_country_codes(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
 
-    table = np.load(path+filename)
-    
-    ISET = table['ISET'][find(table['ISO']==ISO)][0]
-    
-    return ISET
-
-def ISET2ISO_country_codes(ISET='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
-
-    table = np.load(path+filename)
-    
-    ISO = table['ISO'][find(table['ISET']==ISET)][0]
-    
-    return ISO
-
-def get_ISET_country_names(filename='ISET2ISO_country_codes.npy',path='./settings/'):
-
-    table = np.load(path+filename)
-
-    print 'Index\tISO\tISET\tName'
-    print '====================================='
-    for i in arange(len(table)):
-        print '{0}\t{1}\t{2}\t{3}'.format(i, table[i]['ISO'], table[i]['ISET'], table[i]['name'])
-    sys.stdout.flush()
     
 ###
 # DK: i=7; plot_country_optimal_mix_vs_gamma(L[i], GW[i], GS[i], gamma=linspace(0,2.05,31))
@@ -185,3 +118,103 @@ def plot_country_optimal_mix_vs_gamma(L, GW, GS, gamma=linspace(0,2,11),p_interv
 	
 	save_file_name = 'plot_country_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.png'
 	save_figure(figname=save_file_name, fig=gcf(), path='./', dpi=300)
+
+
+######
+# Convinient access to ISET country data.
+# Main function:  get_ISET_country_data()
+###
+
+def get_ISET_country_data(ISO='DK',path='./data/'):
+    """
+    Returns data for a specific country in the ISET data set. 
+    
+    The country is specified using ISO two letter names. For a list of names use get_ISET_country_names().
+    
+    Returns
+    -------
+    t: array
+        hours numbered from 0 to N-1
+    L: array
+        load in MW
+    GW: array
+        wind power generation in MW
+    GS: array
+        solar power generation in MW
+    datetime_offset: scalar
+        num2date(datetime_offset) yields the date and hour of t=0
+    datalabel: string
+        country ISO
+        
+    Example: Returns the Danish load, wind and solar power generation
+        t, L, GW, GS, datetime_offset, datalabel = get_ISET_country_data('DK')
+    
+    """
+    
+    if not valid_ISO(ISO):
+        sys.exit("Error (43nlksd): No such country ISO ({0}). For a list of names use get_ISET_country_names().".format(ISO))
+    
+    filename = ISO + '.npz'
+    
+    try:
+        #Load the data file if it exists:
+        npzfile = np.load(path + filename)
+        print 'Loaded file: ', path + filename
+        sys.stdout.flush()
+        
+    except IOError:
+        print 'Datafile does not exist:', path + filename
+        print 'Trying to download data from pepsi...'
+        sys.stdout.flush()
+        try: 
+            #Normalized data: t, l, Gw, Gs, datetime_offset, datalabels = get_data_countries(schema='norm_agg_avg_1hour_pdata_caps_eu2020',localhost=True);
+            t, L, GW, GS, datetime_offset, datalabels = get_data_countries(localhost=True);
+        except:
+            sys.exit("Error (sdf3dz1): Could not connect to pepsi. Setup ssh access first: ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk")
+            
+        #Save all country files:
+        for i in arange(len(datalabels)):
+            ISO_ = ISET2ISO_country_codes(datalabels[i])
+            filename_ =  ISO_ + '.npz'
+            np.savez(path + filename_,t=t, L=L[i], GW=GW[i], GS=GS[i], datetime_offset=datetime_offset, datalabel=ISO_)
+            print 'Saved file: ', path + filename_
+            sys.stdout.flush()
+         
+        #Load the relevant file now that it has been created:       
+        npzfile = np.load(path + filename)
+        print 'Loaded file: ', path + filename
+        sys.stdout.flush()
+        
+    return npzfile['t'], npzfile['L'], npzfile['GW'], npzfile['GS'], npzfile['datetime_offset'], npzfile['datalabel']
+
+def valid_ISO(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
+
+    table = np.load(path+filename)
+    
+    return (ISO in table['ISO'])
+    
+def ISO2ISET_country_codes(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
+
+    table = np.load(path+filename)
+    
+    ISET = table['ISET'][find(table['ISO']==ISO)][0]
+    
+    return ISET
+
+def ISET2ISO_country_codes(ISET='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
+
+    table = np.load(path+filename)
+    
+    ISO = table['ISO'][find(table['ISET']==ISET)][0]
+    
+    return ISO
+
+def get_ISET_country_names(filename='ISET2ISO_country_codes.npy',path='./settings/'):
+
+    table = np.load(path+filename)
+
+    print 'Index\tISO\tISET\tName'
+    print '====================================='
+    for i in arange(len(table)):
+        print '{0}\t{1}\t{2}\t{3}'.format(i, table[i]['ISO'], table[i]['ISET'], table[i]['name'])
+    sys.stdout.flush()

@@ -541,7 +541,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
         ltext  = leg.get_texts();
         setp(ltext, fontsize='small')    # the legend text fontsize
 
-        axis(ymin=0, xmin=2000, xmax=amax(year))
+        axis(ymin=0, xmin=1995, xmax=amax(year))
         #xlabel('Reference year')
         ylabel('Power [MW]')
 
@@ -560,7 +560,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
         ltext  = leg.get_texts();
         setp(ltext, fontsize='small')    # the legend text fontsize
 
-        axis(ymin=0, xmin=2000, xmax=amax(year))
+        axis(ymin=0, xmin=1995, xmax=amax(year))
         #xlabel('Reference year')
         ylabel('Power [MW]')
 

@@ -132,7 +132,8 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
     The country is specified using ISO two letter names. For a list of names use get_ISET_country_names().
     
     The function retrives/stores data from/in ./data as default. If the data is not available the function
-     attempts to download it from pepsi. This requires ssh access: ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk 
+     attempts to download it from pepsi. This requires ssh access: 
+     ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk 
     
     Returns
     -------

@@ -13,6 +13,7 @@ import os
 
 #Custom functions
 from Database_v1 import get_data_countries, get_data_regions
+from MortenStorage import get_policy_2_storage
 
 def generate_data_files():
     """Works from anywhere  if you setup an ssh tunnel first: ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk"""

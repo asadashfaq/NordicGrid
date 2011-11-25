@@ -22,13 +22,122 @@ from scipy.optimize import brentq
 from scipy.optimize import fmin
 from scipy.optimize import leastsq
 from scipy.interpolate import Rbf
-
+from scipy.stats.mstats import mquantiles
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ##Colors, should be moved to a color module
 color_wind = (0.5,0.7,1.)
 color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)
 
+
+def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,51), quantiles=[.50,.90,.99,1.00], linestyle=[':','-.','--','-'], CS=None, ROI=[.2,.5]):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    
+    balancing_power_mean, excess_power_mean = zeros(len(gamma)), zeros(len(gamma))
+    balancing_power_mean_wind, excess_power_mean_wind = zeros(len(gamma)), zeros(len(gamma))
+    balancing_power_quantiles, excess_power_quantiles = zeros((len(gamma),len(quantiles))), zeros((len(gamma),len(quantiles)))
+    balancing_power_quantiles_wind, excess_power_quantiles_wind = zeros((len(gamma),len(quantiles))), zeros((len(gamma),len(quantiles)))
+    for i in arange(len(gamma)):
+        #Optimal mix
+        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, Gw, Gs, gamma[i], CS=CS, returnall=True)
+        
+        balancing_power_mean[i], excess_power_mean[i] = mean(get_positive(-mismatch_opt)), mean(get_positive(mismatch_opt))
+        balancing_power_quantiles[i], excess_power_quantiles[i] = mquantiles(get_positive(-mismatch_opt),quantiles), mquantiles(get_positive(mismatch_opt),quantiles)
+    
+        #Wind only
+        mismatch_wind = get_mismatch(L, Gw, Gs, gamma[i], alpha_w=1.,CS=CS)
+        balancing_power_mean_wind[i], excess_power_mean_wind[i] = mean(get_positive(-mismatch_wind)), mean(get_positive(mismatch_wind))
+        balancing_power_quantiles_wind[i], excess_power_quantiles_wind[i] = mquantiles(get_positive(-mismatch_wind),quantiles), mquantiles(get_positive(mismatch_wind),quantiles)
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10    
+                
+    figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,6])
+    
+    subplot(211)
+    #Highlight ROI
+    if not ROI==None:
+        fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
+
+    plot(gamma,balancing_power_mean_wind,'-',color=color_wind,lw=3, label='Wind')
+    for i in arange(len(quantiles)):
+        plot(gamma,balancing_power_quantiles_wind.transpose()[i],ls=linestyle[i],lw=2,color=color_wind,label=r'{0:.0f}% quantile'.format(quantiles[i]*100))
+    
+    
+    plot(gamma,balancing_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
+    for i in arange(len(quantiles)):
+        plot(gamma,balancing_power_quantiles.transpose()[i],ls=linestyle[i],lw=1.5,color='k',label=r'{0:.0f}% quantile'.format(quantiles[i]*100))
+
+
+
+    axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1.65)
+    
+    ylabel('Balancing power [av.l.h.]')
+    xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
+    
+    #leg = legend(loc='upper right',title='Balancing ('+ISO+'):');
+    #ltext  = leg.get_texts();
+    #setp(ltext, fontsize='small')    # the legend text fontsize
+
+    add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GW]')
+    
+    subplot(212)
+    
+    #Highlight ROI
+    if not ROI==None:
+        fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
+    
+    plot(gamma,excess_power_mean_wind,'-',color=color_wind,lw=3, label='Wind')
+    for i in arange(len(quantiles)):
+        plot(gamma,excess_power_quantiles_wind.transpose()[i],ls=linestyle[i],lw=2,color=color_wind,label=r'{0:.0f}% quantile'.format(quantiles[i]*100))
+    
+    plot(gamma,excess_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
+    for i in arange(len(quantiles)):
+        plot(gamma,excess_power_quantiles.transpose()[i],ls=linestyle[i],lw=1.5,color='k',label=r'{0:.0f}% quantile'.format(quantiles[i]*100))
+        
+    axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=2.05)
+
+    ylabel('Excess power [av.l.h.]')
+    xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
+
+    #leg = legend(loc='upper left',title='Excess ('+ISO+'):');
+    #ltext  = leg.get_texts();
+    #setp(ltext, fontsize='small')    # the legend text fontsize
+
+    add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GW]')
+
+    tight_layout(pad=0.5,h_pad=2)
+    save_file_name = 'plot_country_balancing_at_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.png'
+    save_figure(save_file_name)
+
+def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tickFormatStr='%.1f'):
+
+    majorFormatter = FormatStrFormatter(tickFormatStr)
+
+    figure(figure_handle.number)
+    
+    ax1 = gca()
+    yticks_ = unit_multiplier*ax1.get_yticks()[find((ax1.get_yticks()<=ax1.get_ylim()[1]) * (ax1.get_yticks()>=ax1.get_ylim()[0]))]
+    
+    divider = make_axes_locatable(ax1)
+    ax2 = divider.append_axes("right", "0%", pad="0%")
+
+    ax2.yaxis.set_ticks_position('right')
+    ax2.yaxis.set_label_position('right')
+    
+    axis(ymin=unit_multiplier*ax1.get_ylim()[0],ymax=unit_multiplier*ax1.get_ylim()[1])
+    ylabel(label)
+    xticks([0],[''])
+    
+    yticks(yticks_,yticks_)
+    
+    ax2.yaxis.set_major_formatter(majorFormatter)
+    
 ###
 # plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31))
 # 6h storage: plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31),CS=6)
@@ -49,6 +158,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
         lower_bound[j] = alpha_w_opt_1p_interval.transpose()[0]
         upper_bound[j] = alpha_w_opt_1p_interval.transpose()[1]
         res_load_sum_p[j] = res_load_sum_1p/len(L)
+
 
     #mask = find((lower_bound[0]!=0) + (upper_bound[0]!=1))
     mask = arange(len(gamma) - amax([argmin(lower_bound[0][::-1]),argmax(upper_bound[0][::-1])]),len(gamma))
@@ -198,56 +308,79 @@ def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None,returnall=False):
 	else:
 		return Res_load_sum
 
+def get_mismatch(L, GW, GS, gamma=1, alpha_w=1.,CS=None):
+
+    L, GW, GS, gamma, alpha_w = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2), array(gamma,ndmin=1), array(alpha_w,ndmin=1)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
+
+    weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
+
+    l = weighed_sum(L)
+    Gw = weighed_sum(GW)	
+    Gs = weighed_sum(GS)
+
+    mismatch = lambda alpha_w, gamma: gamma*(alpha_w*Gw + (1.-alpha_w)*Gs) - l
+
+    if CS==None:
+        return mismatch(alpha_w,gamma)
+    else:
+        return get_policy_2_storage(mismatch(alpha_w,gamma),storage_capacity = CS)[0]
 
 def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True):
 
-	L, GW, GS = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
-	weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
+    L, GW, GS = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
+    weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
 
-	l = weighed_sum(L)
-	Gw = weighed_sum(GW)	
-	Gs = weighed_sum(GS)
+    l = weighed_sum(L)
+    Gw = weighed_sum(GW)	
+    Gs = weighed_sum(GS)
 
-	mismatch = lambda alpha_w: gamma*(alpha_w*Gw + (1.-alpha_w)*Gs) - l
-	
-	if CS==None:
-		res_load_sum = lambda alpha_w: sum(get_positive(-mismatch(alpha_w)))
-	else:
-		res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),storage_capacity = CS)[0]))
-	
-	alpha_w_opt = fmin(res_load_sum,0.5,disp=False)
-	if alpha_w_opt>1.:
-		alpha_w_opt = 1.
-	elif alpha_w_opt<0.:
-		alpha_w_opt = 0.
-	
-	
-	if normalized:
-		mismatch_opt = mismatch(alpha_w_opt)
-	else:
-		mismatch_opt = mismatch(alpha_w_opt)*mean(sum(L,axis=0))
-	res_load_sum_opt = res_load_sum(alpha_w_opt)
-	
-	if returnall:
-		res_load_sum_1p_interval = lambda alpha_w: res_load_sum(alpha_w)-(res_load_sum(alpha_w_opt)+p_interval*sum(l))
-		
-		if sign(res_load_sum_1p_interval(0))!=sign(res_load_sum_1p_interval(alpha_w_opt)):
-			lower_bound = brentq(res_load_sum_1p_interval, 0, alpha_w_opt)
-		else:
-			lower_bound = 0
-		
-		if sign(res_load_sum_1p_interval(1))!=sign(res_load_sum_1p_interval(alpha_w_opt)):
-			upper_bound = brentq(res_load_sum_1p_interval, alpha_w_opt, 1)
-		else:
-			upper_bound = 1
-		
-		alpha_w_opt_1p_interval = array([lower_bound,upper_bound])
-		res_load_sum_1p = amax([res_load_sum(lower_bound),res_load_sum(upper_bound)])
-		
-		#Returns: alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt
-		return alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p
-	else:
-		return alpha_w_opt
+    mismatch = lambda alpha_w: gamma*(alpha_w*Gw + (1.-alpha_w)*Gs) - l
+
+    if CS==None:
+        res_load_sum = lambda alpha_w: sum(get_positive(-mismatch(alpha_w)))
+    else:
+        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),storage_capacity = CS)[0]))
+
+    alpha_w_opt = fmin(res_load_sum,0.5,disp=False)
+    if alpha_w_opt>1.:
+        alpha_w_opt = 1.
+    elif alpha_w_opt<0.:
+        alpha_w_opt = 0.
+
+
+    if normalized:
+        if CS==None:
+            mismatch_opt = mismatch(alpha_w_opt)
+        else:
+            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),storage_capacity = CS)[0]
+    else:
+        if CS==None:
+            mismatch_opt = mismatch(alpha_w_opt)*mean(sum(L,axis=0))
+        else:
+            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),storage_capacity = CS)[0]*mean(sum(L,axis=0))
+            
+    res_load_sum_opt = res_load_sum(alpha_w_opt)
+
+    if returnall:
+        res_load_sum_1p_interval = lambda alpha_w: res_load_sum(alpha_w)-(res_load_sum(alpha_w_opt)+p_interval*sum(l))
+        
+        if sign(res_load_sum_1p_interval(0))!=sign(res_load_sum_1p_interval(alpha_w_opt)):
+            lower_bound = brentq(res_load_sum_1p_interval, 0, alpha_w_opt)
+        else:
+            lower_bound = 0
+        
+        if sign(res_load_sum_1p_interval(1))!=sign(res_load_sum_1p_interval(alpha_w_opt)):
+            upper_bound = brentq(res_load_sum_1p_interval, alpha_w_opt, 1)
+        else:
+            upper_bound = 1
+        
+        alpha_w_opt_1p_interval = array([lower_bound,upper_bound])
+        res_load_sum_1p = amax([res_load_sum(lower_bound),res_load_sum(upper_bound)])
+        
+        #Returns: alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt
+        return alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p
+    else:
+        return alpha_w_opt
 
 
 

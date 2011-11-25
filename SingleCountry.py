@@ -134,6 +134,8 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
     The function retrives/stores data from/in ./data as default. If the data is not available the function
      attempts to download it from pepsi. This requires ssh access: 
      ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk 
+     
+    Filenames are: ISET_country_ISO.npz
     
     Returns
     -------
@@ -141,10 +143,10 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
         hours numbered from 0 to N-1
     L: array
         load in MW
-    GW: array
-        wind power generation in MW
-    GS: array
-        solar power generation in MW
+    Gw: array
+        normalized wind power generation
+    Gs: array
+        normalized solar power generation
     datetime_offset: scalar
         num2date(datetime_offset) yields the date and hour of t=0
     datalabel: string
@@ -158,7 +160,7 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
     if not valid_ISO(ISO):
         sys.exit("Error (43nlksd): No such country ISO ({0}). For a list of names use get_ISET_country_names().".format(ISO))
     
-    filename = ISO + '.npz'
+    filename = 'ISET_country_' + ISO + '.npz'
     
     try:
         #Load the data file if it exists:
@@ -179,8 +181,8 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
         #Save all country files:
         for i in arange(len(datalabels)):
             ISO_ = ISET2ISO_country_codes(datalabels[i])
-            filename_ =  ISO_ + '.npz'
-            np.savez(path + filename_,t=t, L=L[i], GW=GW[i], GS=GS[i], datetime_offset=datetime_offset, datalabel=ISO_)
+            filename_ =  'ISET_country_' + ISO_ + '.npz'
+            np.savez(path + filename_,t=t, L=L[i], Gw=GW[i]/mean(GW[i]), Gs=GS[i]/mean(GS[i]), datetime_offset=datetime_offset, datalabel=ISO_)
             print 'Saved file: ', path + filename_
             sys.stdout.flush()
          
@@ -189,7 +191,7 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
         print 'Loaded file: ', path + filename
         sys.stdout.flush()
         
-    return npzfile['t'], npzfile['L'], npzfile['GW'], npzfile['GS'], npzfile['datetime_offset'], npzfile['datalabel']
+    return npzfile['t'], npzfile['L'], npzfile['Gs'], npzfile['Gs'], npzfile['datetime_offset'], npzfile['datalabel']
 
 def valid_ISO(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
 

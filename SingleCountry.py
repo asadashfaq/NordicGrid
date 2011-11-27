@@ -31,6 +31,42 @@ color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)
 
 
+def plot_storage_balancing_synergy(ISO='DK', gamma=[.5,.75,1.,1.25,1.5], CS=linspace(0,24,5)):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    balancing_mean = zeros((len(gamma),len(CS)))
+    print 'Starting {0:.0f} calculations:'.format(len(gamma)*len(CS)),
+    for j in arange(len(gamma)):
+        for i in arange(len(CS)):
+            print i,
+            sys.stdout.flush()
+
+            #Optimal mix
+            alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, Gw, Gs, gamma[j], CS=CS[i], returnall=True)
+
+            balancing_mean[j][i] = get_positive(-mismatch_opt).mean()
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    figure(1);clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
+    
+    for j in arange(len(gamma)):
+        plot(CS,balancing_mean[j] - gamma[j]*(gamma[j]<=1.))
+    
+    axis(xmin=0,xmax=amax(CS),ymin=0)
+    
+    xlabel('Storage size [av.l.h.]')
+    ylabel('Balancing power [av.l.h.]')
+    
+    tight_layout()
+    save_figure('plot_storage_balancing_synergy_' + ISO + '.png')
+
+
 def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,51), quantiles=[.50,.90,.99,1.00], linestyle=[':','-.','--','-'], CS=None, ROI=[.2,.5]):
 
     #Load data
@@ -115,7 +151,7 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     save_file_name = 'plot_country_balancing_at_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.png'
     save_figure(save_file_name)
 
-def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tickFormatStr='%.1f'):
+def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tickFormatStr='%.1f',invert_axis=False):
 
     majorFormatter = FormatStrFormatter(tickFormatStr)
 
@@ -135,6 +171,8 @@ def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tick
     xticks([0],[''])
     
     yticks(yticks_,yticks_)
+    if invert_axis:
+        ax2.invert_yaxis()
     
     ax2.yaxis.set_major_formatter(majorFormatter)
     
@@ -143,7 +181,7 @@ def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tick
 # 6h storage: plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31),CS=6)
 #
 #(1.,.53,.20)
-def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_interval=[0.01,0.05,0.25], CS=None, linespec=['--','-.',':'], color=[(0.53,0.73,0.37),(1.,.82,.20),(.90,.27,.20)]):
+def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_interval=[0.01,0.05,0.25], CS=None, ROI=[.2,.5], linespec=['--','-.',':'], color=[(0.53,0.73,0.37),(1.,.82,.20),(.90,.27,.20)]):
     """Legacy function from solarDK.py. Should be updated at some point."""
 
     #Load data
@@ -171,10 +209,11 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     figure(1); clf()
 
     gcf().set_dpi(300)
-    gcf().set_size_inches([4.75,6])
+    gcf().set_size_inches([5.25,6])
 
     #Upper panel
-    ax1 = axes([.11,.565,.885,.42])
+    #ax1 = axes([.11,.565,.885,.42])
+    subplot(211)
     plot(gamma[mask],alpha_w_opt[mask],'w-',lw=2)
 
     fill_between(gamma,ones(len(gamma)),color=bg_color,edgecolor=(0,0,0,0))
@@ -187,15 +226,22 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
         plot(gamma,lower_bound[j],linespec[j],color='w',lw=2)
         plot(gamma,upper_bound[j],linespec[j],color='w',lw=2)
 
-    axvline(.2,ls='--',color='k')
-    #plot(gamma,(0.2 + (gamma-0.2)*0.75)/gamma,'k--')
+    #Guide lines
+    #axvline(.2,ls='--',color='k')
+    build_path = lambda gamma, alpha_w_inf, gamma_0=0.2: (gamma_0 + (gamma-gamma_0)*alpha_w_inf)/(gamma+1e-10)
+    plot(gamma,build_path(gamma,0.9),'k-')
+    text(1.5,build_path(1.5,0.9)+.01,'10% solar',va='baseline',weight='demibold')
+    plot(gamma,build_path(gamma,0.8),'k-')
+    text(1.5,build_path(1.5,0.8)+.01,'20% solar',va='baseline',weight='demibold')
+    plot(gamma,build_path(gamma,0.7),'k-')
+    text(1.5,build_path(1.5,0.7)+.01,'30% solar',va='baseline',weight='demibold')
 
     pp[-1] = Rectangle((0, 0), 1, 1, color=bg_color,lw=1)
     pp = list(pp)
 
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1)
     xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
-    ylabel(r'Wind fraction $\alpha_W$')
+    ylabel(r'Wind fraction $\alpha^{'+ISO+'}_w$')
 
     txtlabels = ['0-1 pp','1-5 pp','5-25 pp','>25 pp']
 
@@ -203,11 +249,18 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
+    add_duplicate_yaxis(gcf(),unit_multiplier=1.,label=r'Solar fraction $\alpha^{'+ISO+'}_s$',invert_axis=True)
+
 
     #Lower panel
-    ax2 = axes([.11,.065,.885,.42])
+    subplot(212)
+    #ax2 = axes([.11,.065,.885,.42])
 
-    plot([0,1],[1,0],'-',color='k',alpha=.3)
+    #Highlight ROI
+    if not ROI==None:
+        fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
+
+    plot([0,1],[1,0],'-',color=(.5,.5,.5))
 
     pp_solar = plot(gamma,get_balancing(L, Gw, Gs, gamma, CS=CS, alpha=0.)[0]/len(L),'-',color=color_solar,lw=2)
     pp_wind = plot(gamma,get_balancing(L, Gw, Gs, gamma,  CS=CS, alpha=1.)[0]/len(L),'-',color=color_wind,lw=2)
@@ -219,8 +272,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
         
     pp_opt = plot(gamma,res_load_sum_opt,'k-')
 
-    axvline(.2,ls='--',color='k')
-
+    #axvline(.2,ls='--',color='k')
                 
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1)
     ylabel('Av. residual load [av.h.l.]')
@@ -234,7 +286,11 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
-    save_file_name = 'plot_country_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.png'
+    add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GW]')
+
+
+    tight_layout()
+    save_file_name = 'plot_country_optimal_mix_vs_gamma_'+ISO+'_CS_'+str(CS)+'.png'
     save_figure(save_file_name)
     
 

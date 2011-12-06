@@ -114,7 +114,7 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1.65)
     
     ylabel('Balancing power [av.l.h.]')
-    xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
+    xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
     
     #leg = legend(loc='upper right',title='Balancing ('+ISO+'):');
     #ltext  = leg.get_texts();
@@ -139,7 +139,7 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=2.05)
 
     ylabel('Excess power [av.l.h.]')
-    xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
+    xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
 
     #leg = legend(loc='upper left',title='Excess ('+ISO+'):');
     #ltext  = leg.get_texts();
@@ -148,7 +148,7 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GW]')
 
     tight_layout(pad=0.5,h_pad=2)
-    save_file_name = 'plot_country_balancing_at_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.png'
+    save_file_name = 'plot_country_balancing_at_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
 def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tickFormatStr='%.1f',invert_axis=False):
@@ -206,7 +206,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
 
-    figure(1); clf()
+    close(1); figure(1); clf()
 
     gcf().set_dpi(300)
     gcf().set_size_inches([5.25,6])
@@ -240,7 +240,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     pp = list(pp)
 
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1)
-    xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
+    xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
     ylabel(r'Wind fraction $\alpha^{'+ISO+'}_w$')
 
     txtlabels = ['0-1 pp','1-5 pp','5-25 pp','>25 pp']
@@ -276,11 +276,11 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
                 
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1)
     ylabel('Av. residual load [av.h.l.]')
-    xlabel(r'Average share of electricity demand $\gamma_{'+ISO+'}$')
+    xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
 
     pp2 = [pp_opt[0],pp_wind[0],pp_solar[0]]
     pp2.extend(pp)
-    txtlabels = ['Optimal mix','Wind only','Solar only','1 pp contour','5 pp contour','25 pp contour']
+    txtlabels = ['Optimal mix',r'100% wind','100% solar','1 pp contour','5 pp contour','25 pp contour']
 
     leg = legend(pp2,txtlabels,loc='upper right',ncol=2);
     ltext  = leg.get_texts();
@@ -290,7 +290,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
 
     tight_layout()
-    save_file_name = 'plot_country_optimal_mix_vs_gamma_'+ISO+'_CS_'+str(CS)+'.png'
+    save_file_name = 'plot_country_optimal_mix_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
     
 

@@ -710,7 +710,7 @@ def plot_basepath_gamma_alpha(year,gamma,alpha_w,weight,txtlabels=None):
     
     axis(xmin=amin(year),xmax=2053,ymin=0,ymax=1.3)
     xlabel('Reference year')
-    ylabel(r'Share of electricity demand ($\gamma_X$)')
+    ylabel(r'Gross share of electricity demand ($\gamma_X$)')
     
     pp_text = ['Norway','Sweden','West Denmark','East Denmark','North Germany','Region (mean)','Denmark (mean)']
     

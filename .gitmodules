@@ -1,4 +1,4 @@
 [submodule "zdcpf"]
 	path = zdcpf
 	url = git@github.com:AUESG/zdcpf.git
-	branch = NordicGrid
+	branch = origin/NordicGrid

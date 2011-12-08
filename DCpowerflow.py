@@ -9,7 +9,7 @@ from time import time
 import os
 from copy import deepcopy
 import pickle
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1 import make_axes_locatable  #Some conflict when loading this first time. Doesn't seem to be important ...
 
 colors_countries = ['#00A0B0','#6A4A3C','#CC333F','#EB6841','#EDC951'] #Ocean Five from COLOURlovers.
 color_balancing = '#2B2825' #Conspicuous Creep from COLOURlovers.
@@ -356,6 +356,10 @@ def plot_ts(node,F):
 
     save_figure('plot_ts.png')
 
+def get_nodes_and_flows():
+
+
+    return data
 #
 # data = plot_generation_summary_vs_year(year=linspace(1990,2050,21),node_id=3,lapse=None)
 #
@@ -395,9 +399,9 @@ def plot_generation_summary_vs_year(year=linspace(1985,2053,21),node_id=3,lapse=
             sys.stdout.flush()
             Nodes,F=runtimeseries(Nodes,F,P,q,G,h,A,coop=0,lapse=lapse)
 
-            add_colored_import(Nodes, F, node_id=None, lapse=lapse)
-            #for node in Nodes:
-            #    node.colored_import=zeros(node.nhours)
+            #add_colored_import(Nodes, F, node_id=None, lapse=lapse)
+            for node in Nodes:
+                node.colored_import=zeros(node.nhours)
 
             data.append(deepcopy(Nodes))
     else:
@@ -712,7 +716,7 @@ def plot_basepath_gamma_alpha(year,gamma,alpha_w,weight,txtlabels=None):
     xlabel('Reference year')
     ylabel(r'Gross share of electricity demand ($\gamma_X$)')
     
-    pp_text = ['Norway','Sweden','West Denmark','East Denmark','North Germany','Region (mean)','Denmark (mean)']
+    pp_text = ['Norway','Sweden','Denmark West','Denmark East','Germany North','Region (mean)','Denmark (mean)']
     
     leg = legend(pp,pp_text,loc='upper left')
     ltext  = leg.get_texts();
@@ -803,15 +807,17 @@ def plot_logistic_fit(year,gamma_fit,p_year,p_gamma,p_historical=None,txtlabel=N
     save_figure('plot_logistic_fit_' + txtlabel + '.png')
 
 ##
-# Uncomment the line below the function. Need a better method for storing/retriving data.
+# Uncomment the line below the function to load data file. Need a better method for storing/retriving data.
 #
 def load_pickled_data(filename='data_200111122.p',path='./data/'):
 
     data=pickle.load(open(path+filename,'rb'))
+    print 'Loaded pickled data:',path + filename
+    sys.stdout.flush()
 
     return data
 
-# data = load_pickled_data('data_200111122.p')
+#data = load_pickled_data('data_20111124.p')
 
 ### To be file utilities
 

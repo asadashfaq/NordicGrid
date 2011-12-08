@@ -76,13 +76,12 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence
 def plot_generation_summary_vs_year(year,data,lapse=50*24):
 
     N = data[0]
+    region_name = ['Norway','Sweden','Denmark West','Denmark East','Germany North']
 
     for node_id in arange(len(N)):
         #Calculate averages to be displayed
         balancing_av, import_av, RES_local_av, curtailment_av, export_av = zeros(year.shape), zeros(year.shape), zeros(year.shape), zeros(year.shape), zeros(year.shape)
         for i in arange(len(year)):
-            print data[i][node_id].name, data[i][node_id].gamma, data[i][node_id].balancing.mean()
-            sys.stdout.flush()
             
             #Power used locally
             balancing_av[i] = data[i][node_id].get_localBalancing()[:lapse].mean()/data[i][node_id].mean  #Wrong. Balancing can be exported too!!!!
@@ -105,16 +104,28 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24):
 
         ax1 = axes()
 
-        fill_between(year,balancing_av,color=color_balancing,edgecolor='k',lw=.5)
-        fill_between(year,RES_local_av+balancing_av,balancing_av,color=color_RES,edgecolor='k',lw=.5)
-        fill_between(year,import_av+RES_local_av+balancing_av,RES_local_av+balancing_av,color=color_import,edgecolor='k',lw=.5)
-        fill_between(year,export_av+import_av+RES_local_av+balancing_av,import_av+RES_local_av+balancing_av,color=color_export,edgecolor='k',lw=.5)
-        fill_between(year,curtailment_av+export_av+import_av+RES_local_av+balancing_av,export_av+import_av+RES_local_av+balancing_av,color=color_curtailment,edgecolor='k',lw=.5)
+        pp_balancing = fill_between(year,balancing_av,color=color_balancing,edgecolor='k',lw=.5)
+        pp_VRES = fill_between(year,RES_local_av+balancing_av,balancing_av,color=color_RES,edgecolor='k',lw=.5)
+        pp_import = fill_between(year,import_av+RES_local_av+balancing_av,RES_local_av+balancing_av,color=color_import,edgecolor='k',lw=.5)
+        pp_export = fill_between(year,export_av+import_av+RES_local_av+balancing_av,import_av+RES_local_av+balancing_av,color=color_export,edgecolor='k',lw=.5)
+        pp_curtailment = fill_between(year,curtailment_av+export_av+import_av+RES_local_av+balancing_av,export_av+import_av+RES_local_av+balancing_av,color=color_curtailment,edgecolor='k',lw=.5)
+
+        pp_balancing = Rectangle((0, 0), 1, 1, facecolor=color_balancing)
+        pp_VRES = Rectangle((0, 0), 1, 1, facecolor=color_RES)
+        pp_import = Rectangle((0, 0), 1, 1, facecolor=color_import)
+        pp_export = Rectangle((0, 0), 1, 1, facecolor=color_export)
+        pp_curtailment = Rectangle((0, 0), 1, 1, facecolor=color_curtailment)
 
         axis(ymin=0, ymax =2.05, xmin=amin(year), xmax=amax(year))
         yticks(arange(0,2.05,.5))
         xlabel('Reference year')
         ylabel('Power [av.l.h.]')
+
+        pp = [pp_balancing,pp_VRES,pp_import,pp_export,pp_curtailment]
+        pp_text = ['Balancing','VRES','Import','Export','Curtailment']
+        leg = legend(pp[::-1],pp_text[::-1],title=region_name[node_id],loc='upper left')
+        ltext  = leg.get_texts();
+        setp(ltext, fontsize='small')    # the legend text fontsize
 
         divider = make_axes_locatable(plt.gca())
         ax2 = divider.append_axes("right", "0%", pad="0%")

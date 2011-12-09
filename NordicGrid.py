@@ -13,7 +13,6 @@ import os, sys
 
 #Special functions
 from copy import deepcopy
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #Custom modules
 sys.path.append( './zdcpf/' ) #This can be done in a more fancy way using __init__.py or some such.
@@ -41,28 +40,46 @@ color_edge = (.2,.2,.2)
 #This function will later be replaced by some fancy save/load thing.
 #
 # year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24)
+# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24,add_color=True)
 #
-#
-def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None):
+def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
 
     #Initialize
     N = Nodes()
     Gamma = get_basepath_gamma(year)
-
+    dirList = os.listdir(path_nodes)
+    
     data_nodes, data_flows = [], []
     for i in arange(len(year)):
         print 'Year: {0:.0f}'.format(year[i])
         sys.stdout.flush()
 
-        #Apply year to nodes (Dummy gamma's)
-        N.set_gammas(Gamma.transpose()[i])
-        N.set_alphas([1.,1.,1.,1.,.9])
-        
-        print 'Gamma: ' + str(Gamma.transpose()[i])
-        sys.stdout.flush()
-        
-        #Calculate flows
-        N,F = zdcpf(N,incidence=incidence,constraints=constraints,setupfile=setupfile,path=path,coop=coop,copper=copper,lapse=lapse)
+        nodes_filename = 'nodes_year_'+str(year[i])
+        flows_filename = 'flows_year_'+str(year[i])
+
+        if nodes_filename+'.npz' in dirList:
+            N._load_nodes_(nodes_filename+'.npz',path=path_nodes)
+            F = load(path_nodes+flows_filename+'.npy')
+            
+            print 'Loaded nodes file: '+path_nodes+nodes_filename
+            print 'Loaded flows file: '+path_nodes+flows_filename
+            sys.stdout.flush()
+        else:
+            #Apply year to nodes (Dummy gamma's)
+            N.set_gammas(Gamma.transpose()[i])
+            N.set_alphas([1.,1.,1.,1.,.9])
+            
+            print 'Gamma: ' + str(Gamma.transpose()[i])
+            sys.stdout.flush()
+            
+            #Calculate flows
+            N,F = zdcpf(N,incidence=incidence,constraints=constraints,setupfile=setupfile,path=path,coop=coop,copper=copper,lapse=lapse)
+            
+            if add_color:
+                N.add_colored_import(F,lapse=lapse)
+            
+            N.save_nodes(nodes_filename,path=path_nodes)
+            np.save(path_nodes+flows_filename,F)
         
         #append data
         data_nodes.append(deepcopy(N))
@@ -91,8 +108,6 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24):
             #Power not used locally
             export_av[i] = data[i][node_id].get_export()[:lapse].mean()/data[i][node_id].mean
             curtailment_av[i] = data[i][node_id].curtailment[:lapse].mean()/data[i][node_id].mean
-
-
 
         #Set plot options	
         matplotlib.rcParams['font.size'] = 10
@@ -127,21 +142,226 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24):
         ltext  = leg.get_texts();
         setp(ltext, fontsize='small')    # the legend text fontsize
 
-        divider = make_axes_locatable(plt.gca())
-        ax2 = divider.append_axes("right", "0%", pad="0%")
-        #ax2 = axes(ax1.get_position())
+        add_duplicate_yaxis(gcf(),unit_multiplier=mean(N[node_id].load)/1e3,label='[GW]')
 
-        #ax2 = twinx()
-        ax2.yaxis.set_ticks_position('right')
-        ax2.yaxis.set_label_position('right')
-        axis(ymin=0,ymax=2.05)
-        ylabel('[GW]')
-        xticks([0],[''])
-        yticks(ax1.get_yticks(),around(ax1.get_yticks()*N[node_id].mean/1e3,1))
-
-        tight_layout(pad=.3)
+        tight_layout(pad=.5)
         savename = 'plot_generation_summary_vs_year_Stacked_' + N[node_id].name.replace(' ','_') + '.png'
         save_figure(savename)
+
+#    
+# plot_colored_import_export(year, data, lapse=None)
+#    
+def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
+    region_names = ['NO','SE','DK-W','DK-E','DE-N']
+    Nodes = data[0]
+
+    if lapse==None:
+        lapse=Nodes[0].mismatch.shape[0]
+
+    for node_id in arange(len(Nodes)):
+
+        #Calculate average import
+        colored_import_av = zeros((len(year),len(Nodes)))
+        for	i in arange(len(year)):
+            colored_import_av[i] = mean(data[i][node_id].colored_import.transpose()[:lapse], axis=0)/data[i][node_id].mean
+
+        #Calculate export
+        colored_export_av = zeros((len(year),len(Nodes)))
+        for	i in arange(len(year)):
+            for j in arange(len(Nodes)):
+                colored_export_av[i][j] = mean(data[i][j].colored_import[node_id])/data[i][node_id].mean
+
+        #Set plot options	
+        matplotlib.rcParams['font.size'] = 10
+
+        figure(1); clf()
+
+        gcf().set_dpi(300)
+        gcf().set_size_inches([5.25,3.5])
+
+        subplot(211)
+
+        pp = []; pp_text=[]
+        fill_between(year,cumsum(colored_import_av,axis=1).transpose()[0],color=colors[0],edgecolor='k',lw=.5)
+        pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
+        pp_text.append(region_names[0])
+        for i in arange(1,len(Nodes)):
+            fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i],cumsum(colored_import_av,axis=1).transpose()[i-1],label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
+            pp_text.append(region_names[i])
+
+        pp.pop(node_id); pp_text.pop(node_id)
+        leg = legend(tuple(pp[::-1]),tuple(pp_text[::-1]),loc='upper left',title=region_names[node_id]+' - import')
+        ltext  = leg.get_texts();
+        setp(ltext, fontsize='small')    # the legend text fontsize
+
+        x = amax(cumsum(colored_import_av,axis=1).transpose()[len(Nodes)-1])
+        dx = 10**floor(log10(x))
+        if 5*dx<x:
+            yticks(arange(0,2*x,2.5*dx))
+            ymax_=1.05*arange(0,2*x,2.5*dx)[argmax(arange(0,2*x,2.5*dx)>=x)]
+        else:
+            yticks(arange(0,2*x,dx))
+            ymax_=1.05*arange(0,2*x,dx)[argmax(arange(0,2*x,dx)>=x)]
+            
+        axis(ymin=0, ymax=ymax_, xmin=1995, xmax=amax(year))
+        xlabel('Reference year')
+        ylabel('Power [av.l.h.]')
+        
+        #majorFormatter = matplotlib.ticker.ScalarFormatter(useMathText=True)#FormatStrFormatter('%.1f')
+        #majorFormatter.set_powerlimits((0, 0))
+        #gca().yaxis.set_major_formatter(majorFormatter)
+        
+        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+
+        subplot(212)
+        
+        pp = []; pp_text=[]
+        fill_between(year,cumsum(colored_export_av,axis=1).transpose()[0],color=colors[0],edgecolor='k',lw=.5)
+        pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
+        pp_text.append(region_names[0])
+        for i in arange(1,len(Nodes)):
+            fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
+            pp_text.append(region_names[i])
+
+        pp.pop(node_id); pp_text.pop(node_id)
+        leg = legend(tuple(pp[::-1]),tuple(pp_text[::-1]),loc='upper left',title=region_names[node_id]+' - export')
+        ltext  = leg.get_texts();
+        setp(ltext, fontsize='small')    # the legend text fontsize
+
+        x = amax(cumsum(colored_export_av,axis=1).transpose()[len(Nodes)-1])
+        dx = 10**floor(log10(x))
+        if 5*dx<x:
+            yticks(arange(0,2*x,2.5*dx))
+            ymax_=1.05*arange(0,2*x,2.5*dx)[argmax(arange(0,2*x,2.5*dx)>=x)]
+        else:
+            yticks(arange(0,2*x,dx))
+            ymax_=1.05*arange(0,2*x,dx)[argmax(arange(0,2*x,dx)>=x)]
+            
+        axis(ymin=0, ymax=ymax_, xmin=1995, xmax=amax(year))
+        xlabel('Reference year')
+        ylabel('Power [av.l.h.]')
+        
+        #majorFormatter = matplotlib.ticker.ScalarFormatter(useMathText=True)#FormatStrFormatter('%.1f')
+        #majorFormatter.set_powerlimits((0, 0))
+        #gca().yaxis.set_major_formatter(majorFormatter)
+        
+        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+        
+        tight_layout(pad=.5)
+        savename = 'plot_generation_summary_vs_year_Colored_import_' + region_names[node_id] + '.png'
+        save_figure(savename)
+
+#    
+# plot_colored_import_export(year, data, lapse=None)
+#    
+def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=None):
+    region_names = ['NO','SE','DK-W','DK-E','DE-N']
+    Nodes = data[0]
+
+    if lapse==None:
+        lapse=Nodes[0].mismatch.shape[0]
+
+    for node_id in arange(len(Nodes)):
+
+        #Calculate average import
+        colored_import_av = zeros((len(year),len(Nodes)))
+        for	i in arange(len(year)):
+            colored_import_av[i] = mean(data[i][node_id].colored_import.transpose()[:lapse], axis=0)/data[i][node_id].mean
+
+        #Calculate export
+        colored_export_av = zeros((len(year),len(Nodes)))
+        for	i in arange(len(year)):
+            for j in arange(len(Nodes)):
+                colored_export_av[i][j] = mean(data[i][j].colored_import[node_id])/data[i][node_id].mean
+
+        #Set plot options	
+        matplotlib.rcParams['font.size'] = 10
+
+        figure(1); clf()
+
+        gcf().set_dpi(300)
+        gcf().set_size_inches([5.25,3.5])
+
+        subplot(211)
+
+        envelope = cumsum(colored_import_av,axis=1).transpose()[-1]
+
+        pp = []; pp_text=[]
+        fill_between(year,cumsum(colored_import_av,axis=1).transpose()[0]/envelope,color=colors[0],edgecolor='k',lw=.5)
+        pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
+        pp_text.append(region_names[0])
+        for i in arange(1,len(Nodes)):
+            fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i]/envelope,cumsum(colored_import_av,axis=1).transpose()[i-1]/envelope,label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
+            pp_text.append(region_names[i])
+
+        plot(year,envelope,'k-',lw=3)
+
+        pp.pop(node_id); pp_text.pop(node_id)
+        leg = legend(tuple(pp[::-1]),tuple(pp_text[::-1]),loc='upper left',title=region_names[node_id]+' - import')
+        ltext  = leg.get_texts();
+        setp(ltext, fontsize='small')    # the legend text fontsize
+
+        #x = amax(cumsum(colored_import_av,axis=1).transpose()[len(Nodes)-1])
+        #dx = 10**floor(log10(x))
+        #if 5*dx<x:
+        #    yticks(arange(0,2*x,2.5*dx))
+        #    ymax_=1.05*arange(0,2*x,2.5*dx)[argmax(arange(0,2*x,2.5*dx)>=x)]
+        #else:
+        #    yticks(arange(0,2*x,dx))
+        #    ymax_=1.05*arange(0,2*x,dx)[argmax(arange(0,2*x,dx)>=x)]
+            
+        axis(ymin=0, xmin=1995, xmax=amax(year))
+        xlabel('Reference year')
+        ylabel('Power [av.l.h.]')
+        
+        #majorFormatter = matplotlib.ticker.ScalarFormatter(useMathText=True)#FormatStrFormatter('%.1f')
+        #majorFormatter.set_powerlimits((0, 0))
+        #gca().yaxis.set_major_formatter(majorFormatter)
+        
+        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+
+        subplot(212)
+        
+        pp = []; pp_text=[]
+        fill_between(year,cumsum(colored_export_av,axis=1).transpose()[0],color=colors[0],edgecolor='k',lw=.5)
+        pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
+        pp_text.append(region_names[0])
+        for i in arange(1,len(Nodes)):
+            fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
+            pp_text.append(region_names[i])
+
+        pp.pop(node_id); pp_text.pop(node_id)
+        leg = legend(tuple(pp[::-1]),tuple(pp_text[::-1]),loc='upper left',title=region_names[node_id]+' - export')
+        ltext  = leg.get_texts();
+        setp(ltext, fontsize='small')    # the legend text fontsize
+
+        x = amax(cumsum(colored_export_av,axis=1).transpose()[len(Nodes)-1])
+        dx = 10**floor(log10(x))
+        if 5*dx<x:
+            yticks(arange(0,2*x,2.5*dx))
+            ymax_=1.05*arange(0,2*x,2.5*dx)[argmax(arange(0,2*x,2.5*dx)>=x)]
+        else:
+            yticks(arange(0,2*x,dx))
+            ymax_=1.05*arange(0,2*x,dx)[argmax(arange(0,2*x,dx)>=x)]
+            
+        axis(ymin=0, ymax=ymax_, xmin=1995, xmax=amax(year))
+        xlabel('Reference year')
+        ylabel('Power [av.l.h.]')
+        
+        #majorFormatter = matplotlib.ticker.ScalarFormatter(useMathText=True)#FormatStrFormatter('%.1f')
+        #majorFormatter.set_powerlimits((0, 0))
+        #gca().yaxis.set_major_formatter(majorFormatter)
+        
+        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+        
+        tight_layout(pad=.5)
+        savename = 'plot_generation_summary_vs_year_Colored_import_alt_' + region_names[node_id] + '.png'
+        save_figure(savename)
+
     
 ### Local utilities
 def get_basepath_gamma(year,filename='basepath_gamma.npy'):

@@ -150,31 +150,6 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     tight_layout(pad=0.5,h_pad=2)
     save_file_name = 'plot_country_balancing_at_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
-
-def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tickFormatStr='%.1f',invert_axis=False):
-
-    majorFormatter = FormatStrFormatter(tickFormatStr)
-
-    figure(figure_handle.number)
-    
-    ax1 = gca()
-    yticks_ = unit_multiplier*ax1.get_yticks()[find((ax1.get_yticks()<=ax1.get_ylim()[1]) * (ax1.get_yticks()>=ax1.get_ylim()[0]))]
-    
-    divider = make_axes_locatable(ax1)
-    ax2 = divider.append_axes("right", "0%", pad="0%")
-
-    ax2.yaxis.set_ticks_position('right')
-    ax2.yaxis.set_label_position('right')
-    
-    axis(ymin=unit_multiplier*ax1.get_ylim()[0],ymax=unit_multiplier*ax1.get_ylim()[1])
-    ylabel(label)
-    xticks([0],[''])
-    
-    yticks(yticks_,yticks_)
-    if invert_axis:
-        ax2.invert_yaxis()
-    
-    ax2.yaxis.set_major_formatter(majorFormatter)
     
 ###
 # plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31))

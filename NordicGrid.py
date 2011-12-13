@@ -38,9 +38,13 @@ color_edge = (.2,.2,.2)
 
 
 #This function will later be replaced by some fancy save/load thing.
-#
+# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=None)
 # year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24)
 # year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24,add_color=True)
+#
+#
+# year_cu, data_nodes_cu, data_flows_cu = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=50*24,copper=1,path_nodes='./data/nodes/copper/')
+#
 #
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
 
@@ -90,7 +94,12 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence
 #
 # plot_generation_summary_vs_year(year,data_nodes,lapse=50*24)
 #
-def plot_generation_summary_vs_year(year,data,lapse=50*24):
+# plot_generation_summary_vs_year(year_cu,data_nodes_cu,lapse=None,datalabel='Copper')
+#
+def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
+
+    if datalabel != None:
+        datalabel = datalabel + '_'
 
     N = data[0]
     region_name = ['Norway','Sweden','Denmark West','Denmark East','Germany North']
@@ -145,7 +154,7 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24):
         add_duplicate_yaxis(gcf(),unit_multiplier=mean(N[node_id].load)/1e3,label='[GW]')
 
         tight_layout(pad=.5)
-        savename = 'plot_generation_summary_vs_year_Stacked_' + N[node_id].name.replace(' ','_') + '.png'
+        savename = 'plot_generation_summary_vs_year_Stacked_' + datalabel + N[node_id].name.replace(' ','_') + '.pdf'
         save_figure(savename)
 
 #    
@@ -174,7 +183,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
         #Set plot options	
         matplotlib.rcParams['font.size'] = 10
 
-        figure(1); clf()
+        close(1); figure(1); clf()
 
         gcf().set_dpi(300)
         gcf().set_size_inches([5.25,3.5])
@@ -250,7 +259,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
         add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
         
         tight_layout(pad=.5)
-        savename = 'plot_generation_summary_vs_year_Colored_import_' + region_names[node_id] + '.png'
+        savename = 'plot_colored_import_export_' + region_names[node_id] + '.pdf'
         save_figure(savename)
 
 #    
@@ -362,7 +371,57 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         savename = 'plot_generation_summary_vs_year_Colored_import_alt_' + region_names[node_id] + '.png'
         save_figure(savename)
 
+def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None):
     
+    node_id = list(array(node_id,ndmin=1))
+    
+    gross_share, net_share, total_share = zeros(len(year)), zeros(len(year)), zeros(len(year))
+    for i in arange(len(year)):
+        gross_share_, net_share_, import_share_, load_sum = 0., 0., 0., 0.
+        for node_id_ in node_id:
+            gross_share_ = gross_share_ + data_nodes[i][node_id_].get_wind()[:lapse].mean() + data_nodes[i][node_id_].get_solar()[:lapse].mean()
+            net_share_ = net_share_ + data_nodes[i][node_id_].get_localRES()[:lapse].mean()
+            import_share_ = import_share_ + data_nodes[i][node_id_].get_import()[:lapse].mean()
+            load_sum = load_sum + data_nodes[i][node_id_].mean
+            
+        
+        gross_share[i] = gross_share_/load_sum
+        net_share[i] = net_share_/load_sum
+        total_share[i] = (net_share_ + import_share_)/load_sum
+    
+    close(1); figure(1); clf();
+    
+    plot(gross_share,gross_share,label='Gross share')
+    plot(gross_share,net_share,label='Net share')
+    plot(gross_share,total_share,label='Total share')
+    
+    axhline(1.0,color='k',ls='--')
+    
+    xlabel('Gross share')
+    ylabel('Share')
+    
+    legend(loc='upper left')
+    
+    tight_layout()
+    save_figure('plot_gross_net_total_share.pdf')
+    
+
+def plot_flow_statistics(data_flows,i_year = 10,i_link = 4):
+
+    
+    flows = data_flows[i_year]
+    
+    close(1); figure(1); clf();
+    
+    bins = linspace(1.1*amin(flows[i_link]),1.1*amax(flows[i_link]),100)
+    h_data, bins, patch = hist(flows[i_link],bins,normed=True)
+    
+    
+    axis(xmin=1.1*amin(flows[i_link]),xmax=1.1*amax(flows[i_link]),ymin=0, ymax=1.1*amax(h_data[find(abs(bins[1:])>=2*abs(bins[0]-bins[1]))]))
+
+    save_figure('plot_flow_statistics_test.pdf')
+    
+      
 ### Local utilities
 def get_basepath_gamma(year,filename='basepath_gamma.npy'):
     """ File should be moved to subdir.

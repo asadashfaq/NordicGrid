@@ -740,8 +740,8 @@ def plot_basepath_gamma_alpha(year,gamma,alpha_w,weight,txtlabels=None):
     
     
     axis(xmin=0,xmax=1.025,ymin=0,ymax=1.3)
-    xlabel(r'Danish share of electricity demand ($\gamma_{DK}$)')
-    ylabel(r'Share of electricity demand ($\gamma_X$)')
+    xlabel(r'Danish gross share of electricity demand ($\gamma_{DK}$)')
+    ylabel(r'Gross share of electricity demand ($\gamma_X$)')
     
     pp_text = ['Norway','Sweden','West Denmark','East Denmark','North Germany','Region (mean)','Denmark (mean)']
     
@@ -791,7 +791,7 @@ def plot_logistic_fit(year,gamma_fit,p_year,p_gamma,p_historical=None,txtlabel=N
     axis(xmin=amin(year),xmax=2053,ymin=0,ymax=1.3)
     
     xlabel('Reference year')
-    ylabel(r'Share of total electricity demand ($\gamma_{'+txtlabel+'}$)')
+    ylabel(r'Gross share of electricity demand ($\gamma_{'+txtlabel+'}$)')
 
 
     pp = concatenate([pp_hist,pp_target,pp_fit])

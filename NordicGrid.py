@@ -18,6 +18,7 @@ from copy import deepcopy
 sys.path.append( './zdcpf/' ) #This can be done in a more fancy way using __init__.py or some such.
 from zdcpf import *
 from shortcuts import *
+from SingleCountry import get_ISET_country_data, get_balancing
 
 #Colors. To be placed somewhere else
 colors_countries = ['#00A0B0','#6A4A3C','#CC333F','#EB6841','#EDC951'] #Ocean Five from COLOURlovers.
@@ -42,8 +43,8 @@ color_edge = (.2,.2,.2)
 # year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24)
 # year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24,add_color=True)
 #
-#
-# year_cu, data_nodes_cu, data_flows_cu = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=50*24,copper=1,path_nodes='./data/nodes/copper/')
+# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,path_nodes='./data/nodes/constraints_2011/')
+# year_cu, data_nodes_cu, data_flows_cu = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=1,path_nodes='./data/nodes/copper/')
 #
 #
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
@@ -371,39 +372,74 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         savename = 'plot_generation_summary_vs_year_Colored_import_alt_' + region_names[node_id] + '.png'
         save_figure(savename)
 
-def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None):
+##
+# plot_gross_net_total_share(year,data_nodes,node_id=[2,3],label='2011')
+# plot_gross_net_total_share(year_cu,data_nodes_cu,node_id=[2,3],label='copper')
+#
+def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None,ROI=[.2,.5],label=None):
     
     node_id = list(array(node_id,ndmin=1))
     
-    gross_share, net_share, total_share = zeros(len(year)), zeros(len(year)), zeros(len(year))
+    gross_share, net_res_load, res_load = zeros(len(year)), zeros(len(year)), zeros(len(year))
     for i in arange(len(year)):
-        gross_share_, net_share_, import_share_, load_sum = 0., 0., 0., 0.
+        gross_share_, net_share_, import_share_, localBalancing_, load_sum = 0., 0., 0., 0., 0.
         for node_id_ in node_id:
             gross_share_ = gross_share_ + data_nodes[i][node_id_].get_wind()[:lapse].mean() + data_nodes[i][node_id_].get_solar()[:lapse].mean()
             net_share_ = net_share_ + data_nodes[i][node_id_].get_localRES()[:lapse].mean()
-            import_share_ = import_share_ + data_nodes[i][node_id_].get_import()[:lapse].mean()
+            
+            localBalancing_ = localBalancing_ + data_nodes[i][node_id_].get_localBalancing()[:lapse].mean()
             load_sum = load_sum + data_nodes[i][node_id_].mean
             
         
         gross_share[i] = gross_share_/load_sum
-        net_share[i] = net_share_/load_sum
-        total_share[i] = (net_share_ + import_share_)/load_sum
+        net_res_load[i] = 1 - net_share_/load_sum
+        res_load[i] = localBalancing_/load_sum
     
-    close(1); figure(1); clf();
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1);figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
     
-    plot(gross_share,gross_share,label='Gross share')
-    plot(gross_share,net_share,label='Net share')
-    plot(gross_share,total_share,label='Total share')
+    #Reference line, wind only, DK as one region:
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('DK')
+    gamma = interp(linspace(0,amax(gross_share),111),concatenate([[0],gross_share]),concatenate([[0],gross_share]))
+    
+    xx = 1-gamma
+    plot(gamma,1-gamma-xx,ls='-',color=(.5,.5,.5),label='Local limit') #Full integration of local VRES, no import.
+    
+    plot(gamma,get_balancing(L, Gw, Gs, gamma, alpha=.8)[0]/len(L)-xx,'-',color=(0.53,0.73,0.37),lw=2,label='80/20 mix') #"Optimal mix", actually alpha_w=0.8
+    plot(gamma,get_balancing(L, Gw, Gs, gamma, alpha=1.)[0]/len(L)-xx,'-',color=color_wind,lw=2,label='Wind-only') #Wind-only
+    
+    
+    
+    XX = 1-gross_share
+    
+    plot(gross_share,net_res_load-XX,ls=':',color='k',label='Residual load (net)') #Residual load before import. 
+    plot(gross_share,res_load-XX,ls='-',color='k',label='Residual load') #Local residual load after import.
+    
     
     axhline(1.0,color='k',ls='--')
     
-    xlabel('Gross share')
-    ylabel('Share')
+    #Highlight ROI
+    if not ROI==None:
+        fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
     
-    legend(loc='upper left')
+    axis(ymin=0,ymax=1.0/10.,xmin=0,xmax=.75)
     
+    xlabel(r'Gross share of electricity demand $\gamma_{DK}$')
+    ylabel(r'Av. residual load [av.h.l.]')
+    
+    leg = legend(loc='upper left')
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+        
+    add_duplicate_yaxis(gcf(),unit_multiplier=load_sum/1e3,label='[GW]',tickFormatStr='%.1f')
+
     tight_layout()
-    save_figure('plot_gross_net_total_share.pdf')
+    save_figure('plot_gross_net_total_share_'+label+'.pdf')
     
 
 def plot_flow_statistics(data_flows,i_year = 10,i_link = 4):

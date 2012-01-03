@@ -187,7 +187,6 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     gcf().set_size_inches([5.25,6])
 
     #Upper panel
-    #ax1 = axes([.11,.565,.885,.42])
     subplot(211)
     plot(gamma[mask],alpha_w_opt[mask],'w-',lw=2)
 
@@ -229,7 +228,6 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
     #Lower panel
     subplot(212)
-    #ax2 = axes([.11,.065,.885,.42])
 
     #Highlight ROI
     if not ROI==None:

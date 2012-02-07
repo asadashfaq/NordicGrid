@@ -212,11 +212,12 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     close(1); figure(1); clf()
 
     gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,6])
+    #gcf().set_size_inches([5.25,6])
+    gcf().set_size_inches([5.25,3.5])
 
     #Upper panel
     #ax1 = axes([.11,.565,.885,.42])
-    subplot(211)
+    #subplot(211)
     plot(gamma[mask],alpha_w_opt[mask],'w-',lw=2)
 
     fill_between(gamma,ones(len(gamma)),color=bg_color,edgecolor=(0,0,0,0))
@@ -256,16 +257,21 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     #txtlabels = ['0-1 pp','1-5 pp','5-25 pp','>25 pp']
     txtlabels = ['0-1 pp','1-5 pp',' >5 pp']
 
-    leg = legend(pp,txtlabels,loc='lower right',ncol=2);
+    leg = legend(pp,txtlabels,loc='lower right',ncol=2,title='Deviation from optimal mix');
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
     add_duplicate_yaxis(gcf(),unit_multiplier=1.,label=r'Solar fraction $\alpha^{'+ISO+'}_s$',invert_axis=True)
 
+    tight_layout()
+    save_file_name = 'plot_country_optimal_mix_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
 
     #Lower panel
-    subplot(212)
+    #subplot(212)
     #ax2 = axes([.11,.065,.885,.42])
+
+    close(1); figure(1); clf()
 
     #Highlight ROI
     if not ROI==None:
@@ -300,9 +306,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GW]')
 
 
-    tight_layout()
-    save_file_name = 'plot_country_optimal_mix_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
-    save_figure(save_file_name)
+
     
 
 ###############

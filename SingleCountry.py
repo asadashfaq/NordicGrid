@@ -180,6 +180,9 @@ def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tick
 # plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31))
 # 6h storage: plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31),CS=6)
 #
+# plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,1.05,31),p_interval=[0.01,0.05],linespec=['-','-'])
+#
+#
 #(1.,.53,.20)
 def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_interval=[0.01,0.05,0.25], CS=None, ROI=[.2,.5], linespec=['--','-.',':'], color=[(0.53,0.73,0.37),(1.,.82,.20),(.90,.27,.20)]):
     """Legacy function from solarDK.py. Should be updated at some point."""
@@ -223,27 +226,35 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
         fill_between(gamma,lower_bound[j],upper_bound[j],color=color[j],lw=1,edgecolor=(0,0,0,0))
         pp[j] = Rectangle((0, 0), 1, 1, color=color[j],lw=1)
         
-        plot(gamma,lower_bound[j],linespec[j],color='w',lw=2)
-        plot(gamma,upper_bound[j],linespec[j],color='w',lw=2)
-
-    #Guide lines
-    #axvline(.2,ls='--',color='k')
-    build_path = lambda gamma, alpha_w_inf, gamma_0=0.2: (gamma_0 + (gamma-gamma_0)*alpha_w_inf)/(gamma+1e-10)
-    plot(gamma,build_path(gamma,0.9),'k-')
-    text(1.5,build_path(1.5,0.9)+.01,'10% solar',va='baseline',weight='demibold')
-    plot(gamma,build_path(gamma,0.8),'k-')
-    text(1.5,build_path(1.5,0.8)+.01,'20% solar',va='baseline',weight='demibold')
-    plot(gamma,build_path(gamma,0.7),'k-')
-    text(1.5,build_path(1.5,0.7)+.01,'30% solar',va='baseline',weight='demibold')
+        plot(gamma,lower_bound[j],linespec[j],color='w',lw=1)
+        plot(gamma,upper_bound[j],linespec[j],color='w',lw=1)
 
     pp[-1] = Rectangle((0, 0), 1, 1, color=bg_color,lw=1)
     pp = list(pp)
+
+    ## Present state
+    gamma_present,alpha_w_present, label_present = .22, 1.0, '2010'
+    plot(gamma_present,alpha_w_present,'.',ms=15,color='k')
+    text(gamma_present+.025,alpha_w_present-.025,label_present,va='top',ha='left')
+
+    ##Scenario guide lines
+    ##axvline(.2,ls='--',color='k')
+    #build_path = lambda gamma, alpha_w_inf, gamma_0=0.2: (gamma_0 + (gamma-gamma_0)*alpha_w_inf)/(gamma+1e-10)
+    #plot(gamma,build_path(gamma,0.9),'k-')
+    #text(1.5,build_path(1.5,0.9)+.01,'10% solar',va='baseline',weight='demibold')
+    #plot(gamma,build_path(gamma,0.8),'k-')
+    #text(1.5,build_path(1.5,0.8)+.01,'20% solar',va='baseline',weight='demibold')
+    #plot(gamma,build_path(gamma,0.7),'k-')
+    #text(1.5,build_path(1.5,0.7)+.01,'30% solar',va='baseline',weight='demibold')
+
+
 
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1)
     xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
     ylabel(r'Wind fraction $\alpha^{'+ISO+'}_w$')
 
-    txtlabels = ['0-1 pp','1-5 pp','5-25 pp','>25 pp']
+    #txtlabels = ['0-1 pp','1-5 pp','5-25 pp','>25 pp']
+    txtlabels = ['0-1 pp','1-5 pp',' >5 pp']
 
     leg = legend(pp,txtlabels,loc='lower right',ncol=2);
     ltext  = leg.get_texts();

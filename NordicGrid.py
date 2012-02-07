@@ -158,10 +158,107 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
         savename = 'plot_generation_summary_vs_year_Stacked_' + datalabel + N[node_id].name.replace(' ','_') + '.pdf'
         save_figure(savename)
 
+
+##New version
+#
+# plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=None,datalabel='Denmark')
+# plot_generation_summary_vs_year_2(year_cu,data_nodes_cu,node_id=[2,3],lapse=None,datalabel='Denmark_copper')
+# 
+def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
+
+    N = data_nodes[0]
+    region_name = ['Norway','Sweden','Denmark West','Denmark East','Germany North']
+    node_id = list(array(node_id,ndmin=1))
+    
+    gross_share, RES_local_av, balancing_av, curtailment_av, import_av, export_av = zeros(len(year)), zeros(len(year)), zeros(len(year)), zeros(len(year)), zeros(len(year)), zeros(len(year))
+    
+    for i in arange(len(year)):
+        load_sum, gross_share_, RES_local_av_, import_share_, balancing_av_, import_av_, export_av_, curtailment_av_ = 0., 0., 0., 0., 0., 0., 0., 0.
+        for node_id_ in node_id:
+            node = data_nodes[i][node_id_]
+            
+            load_sum = load_sum + node.mean
+            gross_share_ = gross_share_ + node.gamma*node.mean
+            
+            #Power used locally
+            RES_local_av_ = RES_local_av_ + node.get_localRES()[:lapse].mean() + sum(node.colored_import[find([id in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
+            balancing_av_ = balancing_av_ + node.get_localBalancing()[:lapse].mean()
+            import_av_ = import_av_ + sum(node.colored_import[find([id not in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
+            
+            #Power not used locally
+            curtailment_av_ = curtailment_av_ + node.curtailment[:lapse].mean()
+            export_av_ = export_av_ + (node.get_export() - sum(node.colored_import[find([id in node_id for id in arange(len(N))])],axis=0))[:lapse].mean()
+            
+        #Normalize all
+        gross_share[i] = gross_share_/load_sum
+        RES_local_av[i] = RES_local_av_/load_sum #
+        balancing_av[i] = balancing_av_/load_sum #
+        curtailment_av[i] = curtailment_av_/load_sum #
+        import_av[i] = import_av_/load_sum
+        export_av[i] = export_av_/load_sum
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1);figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    ax = axes()
+
+    pp_balancing = fill_between(year,balancing_av,color=color_balancing,edgecolor='k',lw=.5)
+    pp_VRES = fill_between(year,RES_local_av+balancing_av,balancing_av,color=color_RES,edgecolor='k',lw=.5)
+    pp_import = fill_between(year,import_av+RES_local_av+balancing_av,RES_local_av+balancing_av,color=color_import,edgecolor='k',lw=.5)
+    pp_export = fill_between(year,export_av+import_av+RES_local_av+balancing_av,import_av+RES_local_av+balancing_av,color=color_export,edgecolor='k',lw=.5)
+    pp_curtailment = fill_between(year,curtailment_av+export_av+import_av+RES_local_av+balancing_av,export_av+import_av+RES_local_av+balancing_av,color=color_curtailment,edgecolor='k',lw=.5)
+
+    pp_balancing = Rectangle((0, 0), 1, 1, facecolor=color_balancing)
+    pp_VRES = Rectangle((0, 0), 1, 1, facecolor=color_RES)
+    pp_import = Rectangle((0, 0), 1, 1, facecolor=color_import)
+    pp_export = Rectangle((0, 0), 1, 1, facecolor=color_export)
+    pp_curtailment = Rectangle((0, 0), 1, 1, facecolor=color_curtailment)
+
+    axis(ymin=0, ymax =1.55, xmin=amin(year), xmax=amax(year))
+    yticks(arange(0,1.55,.25))
+    xlabel('Reference year')
+    ylabel('Power [av.l.h.]')
+
+    pp = [pp_balancing,pp_VRES,pp_import,pp_export,pp_curtailment]
+    pp_text = ['Balancing','VRES','Import','Export','Curtailment']
+    leg = legend(pp[::-1],pp_text[::-1],title=datalabel,loc='lower left')
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+    
+    #Annotations
+    year_export_1pp = interp(0.01,export_av,year)
+    if year_export_1pp<amax(year):
+        gross_export_1pp = interp(year_export_1pp,year,gross_share)
+        ax.annotate('{0:.0f} ({1:.0f}%):\nExport: 0.01 av.l.h.'.format(year_export_1pp,100*gross_export_1pp), xy=(year_export_1pp, 1),  xycoords='data',xytext=(-90, 12), textcoords='offset points',bbox=dict(boxstyle="round", fc="w"),arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"),fontsize='small')
+
+    year_import_1pp = interp(0.01,import_av,year)
+    if year_import_1pp<amax(year):
+        gross_import_1pp = interp(year_import_1pp,year,gross_share)
+        ax.annotate('{0:.0f} ({1:.0f}%):\nImport: 0.01 av.l.h.'.format(year_import_1pp,100*gross_import_1pp), xy=(year_import_1pp, 1.0),  xycoords='data',xytext=(-80, 40), textcoords='offset points',bbox=dict(boxstyle="round", fc="w"),arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"),fontsize='small')
+
+    year_curt_1pp = interp(0.01,curtailment_av,year)
+    if year_curt_1pp<amax(year):
+        gross_curt_1pp = interp(year_curt_1pp,year,gross_share)
+        offset_curt_1pp = 1 + interp(year_curt_1pp,year,export_av)
+        ax.annotate('{0:.0f} ({1:.0f}%):\nCurtailment: 0.01 av.l.h.'.format(year_curt_1pp,100*gross_curt_1pp), xy=(year_curt_1pp, offset_curt_1pp),  xycoords='data',xytext=(0, 45), textcoords='offset points',bbox=dict(boxstyle="round", fc="w"),arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"),fontsize='small')
+
+
+    add_duplicate_yaxis(gcf(),unit_multiplier=load_sum/1e3,label='[GW (2007)]')
+
+    tight_layout(pad=.5)
+    savename = 'plot_generation_summary_vs_year_Stacked_2_' + str(datalabel) + '.pdf'
+    save_figure(savename)
+
 #    
-# plot_colored_import_export(year, data, lapse=None)
+# plot_colored_import_export(year, data_nodes, datalabel='2011')
+# plot_colored_import_export(year_cu, data_nodes_cu, datalabel='copper')
 #    
-def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
+def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, datalabel=''):
     region_names = ['NO','SE','DK-W','DK-E','DE-N']
     Nodes = data[0]
 
@@ -260,13 +357,13 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None):
         add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
         
         tight_layout(pad=.5)
-        savename = 'plot_colored_import_export_' + region_names[node_id] + '.pdf'
+        savename = 'plot_colored_import_export_' + region_names[node_id] + '_' + datalabel + '.pdf'
         save_figure(savename)
 
 #    
 # plot_colored_import_export(year, data, lapse=None)
 #    
-def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=None):
+def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=None, datalabel=''):
     region_names = ['NO','SE','DK-W','DK-E','DE-N']
     Nodes = data[0]
 
@@ -369,7 +466,7 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
         
         tight_layout(pad=.5)
-        savename = 'plot_generation_summary_vs_year_Colored_import_alt_' + region_names[node_id] + '.png'
+        savename = 'plot_generation_summary_vs_year_Colored_import_alt_' + region_names[node_id] + datalabel + '.pdf'
         save_figure(savename)
 
 ##
@@ -380,9 +477,10 @@ def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None,ROI=[.2,.5],
     
     node_id = list(array(node_id,ndmin=1))
     
-    gross_share, net_res_load, res_load = zeros(len(year)), zeros(len(year)), zeros(len(year))
+    gross_share, net_res_load, res_load, net_plus_export = zeros(len(year)), zeros(len(year)), zeros(len(year)), zeros(len(year))
+    
     for i in arange(len(year)):
-        gross_share_, net_share_, import_share_, localBalancing_, load_sum = 0., 0., 0., 0., 0.
+        gross_share_, net_share_, import_share_, localBalancing_, net_plus_export_, load_sum = 0., 0., 0., 0., 0., 0.
         for node_id_ in node_id:
             gross_share_ = gross_share_ + data_nodes[i][node_id_].get_wind()[:lapse].mean() + data_nodes[i][node_id_].get_solar()[:lapse].mean()
             net_share_ = net_share_ + data_nodes[i][node_id_].get_localRES()[:lapse].mean()
@@ -390,10 +488,14 @@ def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None,ROI=[.2,.5],
             localBalancing_ = localBalancing_ + data_nodes[i][node_id_].get_localBalancing()[:lapse].mean()
             load_sum = load_sum + data_nodes[i][node_id_].mean
             
+            net_plus_export_ = net_plus_export_ + data_nodes[i][node_id_].get_wind()[:lapse].mean() + data_nodes[i][node_id_].get_solar()[:lapse].mean() - data_nodes[i][node_id_].curtailment[:lapse].mean()
         
         gross_share[i] = gross_share_/load_sum
         net_res_load[i] = 1 - net_share_/load_sum
         res_load[i] = localBalancing_/load_sum
+        net_plus_export[i] = 1- net_plus_export_/load_sum
+    
+    gross_share, net_res_load, res_load, net_plus_export = concatenate([[0],gross_share]), concatenate([[1],net_res_load]), concatenate([[1],res_load]), concatenate([[1],net_plus_export])
     
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
@@ -405,21 +507,16 @@ def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None,ROI=[.2,.5],
     
     #Reference line, wind only, DK as one region:
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('DK')
-    gamma = interp(linspace(0,amax(gross_share),111),concatenate([[0],gross_share]),concatenate([[0],gross_share]))
+    gamma = interp(linspace(0,amax(gross_share),111),gross_share,gross_share)
     
-    xx = 1-gamma
-    plot(gamma,1-gamma-xx,ls='-',color=(.5,.5,.5),label='Local limit') #Full integration of local VRES, no import.
+    plot(gamma,1-gamma,ls='-',color=(.5,.5,.5),label='Local limit') #Full integration of local VRES, no import.
     
-    plot(gamma,get_balancing(L, Gw, Gs, gamma, alpha=.8)[0]/len(L)-xx,'-',color=(0.53,0.73,0.37),lw=2,label='80/20 mix') #"Optimal mix", actually alpha_w=0.8
-    plot(gamma,get_balancing(L, Gw, Gs, gamma, alpha=1.)[0]/len(L)-xx,'-',color=color_wind,lw=2,label='Wind-only') #Wind-only
+    plot(gamma,get_balancing(L, Gw, Gs, gamma, alpha=.8)[0]/len(L),'-',color=(0.53,0.73,0.37),lw=2,label='80/20 mix') #"Optimal mix", actually alpha_w=0.8
+    plot(gamma,get_balancing(L, Gw, Gs, gamma, alpha=1.)[0]/len(L),'-',color=color_wind,lw=2,label='Wind-only') #Wind-only
     
-    
-    
-    XX = 1-gross_share
-    
-    plot(gross_share,net_res_load-XX,ls=':',color='k',label='Residual load (net)') #Residual load before import. 
-    plot(gross_share,res_load-XX,ls='-',color='k',label='Residual load') #Local residual load after import.
-    
+    plot(gross_share,net_res_load,ls=':',color='k',label='Residual load (net)') #Residual load before import. 
+    plot(gross_share,res_load,ls='-',color='k',lw=1.5,label='Residual load') #Local residual load after import.
+    plot(gross_share,net_plus_export,ls='--',color='k',label='Net + export') #Global use of local VRES.
     
     axhline(1.0,color='k',ls='--')
     
@@ -427,12 +524,12 @@ def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None,ROI=[.2,.5],
     if not ROI==None:
         fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
     
-    axis(ymin=0,ymax=1.0/10.,xmin=0,xmax=.75)
+    axis(xmin=0,ymin=0,ymax=1.0)
     
     xlabel(r'Gross share of electricity demand $\gamma_{DK}$')
     ylabel(r'Av. residual load [av.h.l.]')
     
-    leg = legend(loc='upper left')
+    leg = legend(loc='upper right')
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
         

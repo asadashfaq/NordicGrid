@@ -689,10 +689,10 @@ def plot_basepath_gamma_alpha(year,gamma,alpha_w,weight,txtlabels=None):
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
 
-    figure(1); clf()
+    close(1); figure(1); clf()
     
     gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,3.5])    
+    gcf().set_size_inches([6.5,4.3])    
     
     pp = []
     for i in arange(len(gamma)):
@@ -713,19 +713,19 @@ def plot_basepath_gamma_alpha(year,gamma,alpha_w,weight,txtlabels=None):
     xlabel('Reference year')
     ylabel(r'Gross share of electricity demand ($\gamma_X$)')
     
-    pp_text = ['Norway','Sweden','West Denmark','East Denmark','North Germany','Region (mean)','Denmark (mean)']
+    pp_text = ['Norway','Sweden','Denmark West','Denmark East','Germany North','Region (mean)','Denmark (mean)']
     
     leg = legend(pp,pp_text,loc='upper left')
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
     
     tight_layout(pad=.2)
-    save_figure('plot_basepath_gamma_vs_year.png')
+    save_figure('plot_basepath_gamma_vs_year.pdf')
     
-    figure(1); clf()
+    close(1); figure(1); clf()
     
     gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,3.5])    
+    gcf().set_size_inches([6.5,4.3])    
     
     pp = []
     for i in arange(len(gamma)):
@@ -743,14 +743,14 @@ def plot_basepath_gamma_alpha(year,gamma,alpha_w,weight,txtlabels=None):
     xlabel(r'Danish gross share of electricity demand ($\gamma_{DK}$)')
     ylabel(r'Gross share of electricity demand ($\gamma_X$)')
     
-    pp_text = ['Norway','Sweden','West Denmark','East Denmark','North Germany','Region (mean)','Denmark (mean)']
+    pp_text = ['Norway','Sweden','Denmark West','Denmark East','Germany North','Region (mean)','Denmark (mean)']
     
     leg = legend(pp,pp_text,loc='upper left')
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
     
     tight_layout(pad=.2)
-    save_figure('plot_basepath_gamma_vs_gamma_DK.png')
+    save_figure('plot_basepath_gamma_vs_gamma_DK.pdf')
 
 def get_logistic_fit(p_year,p_gamma,year0=1980,year=None,plot_on=False,p_historical=None,txtlabel=None,txttitle=None):
     

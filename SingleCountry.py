@@ -17,19 +17,20 @@ from shortcuts import *
 from Database_v1 import get_data_countries, get_data_regions
 from MortenStorage import get_policy_2_storage
 
-#Specific functions, not sure if alla are actually used
+#Specific functions, not sure if all are actually used
 from scipy.optimize import brentq
 from scipy.optimize import fmin
 from scipy.optimize import leastsq
 from scipy.interpolate import Rbf
 from scipy.stats.mstats import mquantiles
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import calendar #Used to place day labels on plots
 
 ##Colors, should be moved to a color module
 color_wind = (0.5,0.7,1.)
 color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)
-
+color_edge = (.4,.4,.4)
 
 def plot_storage_balancing_synergy(ISO='DK', gamma=[.5,.75,1.,1.25,1.5], CS=linspace(0,24,5)):
 
@@ -200,9 +201,9 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
         upper_bound[j] = alpha_w_opt_1p_interval.transpose()[1]
         res_load_sum_p[j] = res_load_sum_1p/len(L)
 
-
-    #mask = find((lower_bound[0]!=0) + (upper_bound[0]!=1))
+    #Filter optimal path
     mask = arange(len(gamma) - amax([argmin(lower_bound[0][::-1]),argmax(upper_bound[0][::-1])]),len(gamma))
+    mask = mask[find(abs(diff(alpha_w_opt[mask],2))/diff(gamma[mask][:-1])<1)] #Filter noise in optimal path.
 
     res_load_sum_opt = res_load_sum_opt/len(L)
 
@@ -213,8 +214,9 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
     gcf().set_dpi(300)
     #gcf().set_size_inches([5.25,6])
-    gcf().set_size_inches([5.25,3.5])
-
+    #gcf().set_size_inches([5.25,3.5])
+    gcf().set_size_inches([6.5,4.3])
+    
     #Upper panel
     #ax1 = axes([.11,.565,.885,.42])
     #subplot(211)
@@ -235,8 +237,8 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
     ## Present state
     gamma_present,alpha_w_present, label_present = .22, 1.0, '2010'
-    plot(gamma_present,alpha_w_present,'.',ms=15,color='k')
-    text(gamma_present+.025,alpha_w_present-.025,label_present,va='top',ha='left')
+    plot(gamma_present,alpha_w_present,'o',ms=10,mfc='k',mec=(.8,.8,.8),mew=1)
+    text(gamma_present+.025,alpha_w_present-.025,label_present,va='top',ha='left',weight='semibold',fontsize=10)
 
     ##Scenario guide lines
     ##axvline(.2,ls='--',color='k')
@@ -267,25 +269,104 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     save_file_name = 'plot_country_optimal_mix_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
-    #Lower panel
-    #subplot(212)
-    #ax2 = axes([.11,.065,.885,.42])
+    ########
+    # Triangle plot of optimal mix map
+    ####
 
     close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.5])
+    
+    conv_x = lambda gamma, alpha_w: mean(L)*gamma*alpha_w
+    conv_y = lambda gamma, alpha_w: mean(L)*gamma*(1-alpha_w)
+
+    plot(conv_x(gamma[mask],alpha_w_opt[mask]),conv_y(gamma[mask],alpha_w_opt[mask]),'w-',lw=2)
+
+    #fill_between(conv_x(gamma,amax(gamma)*ones(len(gamma))),amax(gamma)*ones(len(gamma)),color=bg_color,edgecolor=(0,0,0,0))
+    fill(mean(L)*concatenate([gamma,[0]]),mean(L)*concatenate([zeros(gamma.shape),[amax(gamma)]]),color=bg_color,edgecolor=(0,0,0,0))
+
+    pp = list(zeros(1+len(p_interval)))
+    for j in arange(len(p_interval))[::-1]:
+        
+        
+        x = concatenate([conv_x(gamma,lower_bound[j]),conv_x(gamma,upper_bound[j])[::-1]])
+        y = concatenate([conv_y(gamma,lower_bound[j]),conv_y(gamma,upper_bound[j])[::-1]])
+        fill(x,y,color=color[j],lw=1,edgecolor=(0,0,0,0))
+        
+        
+        #ub = interp(conv_x(gamma,lower_bound[j]),conv_x(gamma,upper_bound[j]),conv_y(gamma,upper_bound[j]))
+        #fill_between(conv_x(gamma,lower_bound[j]),conv_y(gamma,lower_bound[j]),ub,color=color[j],lw=1,edgecolor=(0,0,0,0))
+        pp[j] = Rectangle((0, 0), 1, 1, color=color[j],lw=1)
+        
+        plot(conv_x(gamma,lower_bound[j]),conv_y(gamma,lower_bound[j]),linespec[j],color='w',lw=1)
+        plot(conv_x(gamma,upper_bound[j]),conv_y(gamma,upper_bound[j]),linespec[j],color='w',lw=1)
+
+    pp[-1] = Rectangle((0, 0), 1, 1, color=bg_color,lw=1)
+    pp = list(pp)
+
+    ## Guide lines
+    plot(.2*array([0.,mean(L)]),.2*array([mean(L),0]),'k--',lw=1)
+    text(.05*mean(L),.2*mean(L)-.025*mean(L),r'20%',weight='semibold',fontsize=10)
+    
+    plot(.5*array([0.,mean(L)]),.5*array([mean(L),0]),'k--',lw=1)
+    text(.05*mean(L),.5*mean(L)-.025*mean(L),r'50%',weight='semibold',fontsize=10)
+    
+    plot(1.*array([0.,mean(L)]),1.*array([mean(L),0]),'k--',lw=1)
+    text(.05*mean(L),1.*mean(L)-.025*mean(L),r'100%',weight='semibold',fontsize=10)
+    
+
+    ## Present state
+    gamma_present,alpha_w_present, label_present = .22*mean(L), 0.0, '2010'
+    plot(gamma_present,alpha_w_present,'o',ms=10,mfc='k',mec='w',mew=1)
+    text(gamma_present+.025*mean(L),alpha_w_present+.025*mean(L),label_present,va='bottom',ha='left',weight='semibold',fontsize=10)
+
+    axis(xmin=0,xmax=mean(L)*amax(gamma),ymin=0,ymax=mean(L)*amax(gamma))
+    axis('scaled')
+    xlabel(r'Av. wind power [GWh/h]')
+    ylabel(r'Av. solar PV power [GWh/h]')
+    
+    ax=gca()
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
+    txtlabels = ['0-1 pp','1-5 pp',' >5 pp']
+
+    leg = legend(pp,txtlabels,loc='upper right',ncol=2,title='Deviation from optimal mix');
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+
+   # add_duplicate_yaxis(gcf(),unit_multiplier=1.,label=r'Solar fraction $\alpha^{'+ISO+'}_s$',invert_axis=True)
+
+    tight_layout()
+    save_file_name = 'plot_country_optimal_mix_vs_gamma_triangle_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
+
+
+    #####
+    # Decrease in average balancing vs gamma
+    #####
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
 
     #Highlight ROI
     if not ROI==None:
         fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
 
-    plot([0,1],[1,0],'-',color=(.5,.5,.5))
+    pp_full = plot([0,1],[1,0],'--',color=(.5,.5,.5))
 
     pp_solar = plot(gamma,get_balancing(L, Gw, Gs, gamma, CS=CS, alpha=0.)[0]/len(L),'-',color=color_solar,lw=2)
     pp_wind = plot(gamma,get_balancing(L, Gw, Gs, gamma,  CS=CS, alpha=1.)[0]/len(L),'-',color=color_wind,lw=2)
 
-    pp = list(zeros(len(p_interval)))
-    for j in arange(len(p_interval))[::-1]:
-        pp_ = plot(gamma,res_load_sum_p[j],linespec[j],color='k')
-        pp[j] = pp_[0]
+    #pp = list(zeros(len(p_interval)))
+    #for j in arange(len(p_interval))[::-1]:
+    #    pp_ = plot(gamma,res_load_sum_p[j],linespec[j],color='k')
+    #    pp[j] = pp_[0]
         
     pp_opt = plot(gamma,res_load_sum_opt,'k-')
 
@@ -295,19 +376,199 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     ylabel('Av. residual load [av.h.l.]')
     xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
 
-    pp2 = [pp_opt[0],pp_wind[0],pp_solar[0]]
-    pp2.extend(pp)
-    txtlabels = ['Optimal mix',r'100% wind','100% solar','1 pp contour','5 pp contour','25 pp contour']
+    pp = [pp_full[0],pp_opt[0],pp_wind[0],pp_solar[0]]
+    #pp2.extend(pp)
+    #txtlabels = ['Optimal mix',r'100% wind','100% solar','1 pp contour','5 pp contour','25 pp contour']
+    txtlabels = [r'Full integration',r'Optimal mix',r'100% wind',r'100% solar']
 
-    leg = legend(pp2,txtlabels,loc='upper right',ncol=2);
+    leg = legend(pp,txtlabels,loc='upper right',ncol=2);
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
-    add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GW]')
+    add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GWh]')
 
-
-
+    tight_layout()
+    save_file_name = 'plot_country_transition_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
     
+    
+    #####
+    # Av. local excess vs gamma
+    #####
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    #Highlight ROI
+    if not ROI==None:
+        fill_betweenx([0,10],ROI[1]*ones(2),ROI[0],lw=0,color='k',alpha=.1)
+
+    balancing_min = (1.-gamma)*(gamma<=1)
+
+    pp_solar = plot(gamma,get_balancing(L, Gw, Gs, gamma, CS=CS, alpha=0.)[0]/len(L) - balancing_min,'-',color=color_solar,lw=2)
+    pp_wind = plot(gamma,get_balancing(L, Gw, Gs, gamma,  CS=CS, alpha=1.)[0]/len(L) - balancing_min,'-',color=color_wind,lw=2)
+
+    #pp = list(zeros(len(p_interval)))
+    #for j in arange(len(p_interval))[::-1]:
+    #    pp_ = plot(gamma,res_load_sum_p[j],linespec[j],color='k')
+    #    pp[j] = pp_[0]
+        
+    pp_opt = plot(gamma,res_load_sum_opt - balancing_min,'k-')
+
+    #axvline(.2,ls='--',color='k')
+                
+    axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=.33)
+    ylabel('Av. excess balancing [av.h.l.]')
+    xlabel(r'Gross share of electricity demand $\gamma_{'+ISO+'}$')
+
+    pp = [pp_opt[0],pp_wind[0],pp_solar[0]]
+    #pp2.extend(pp)
+    #txtlabels = ['Optimal mix',r'100% wind','100% solar','1 pp contour','5 pp contour','25 pp contour']
+    txtlabels = [r'Optimal mix',r'100% wind',r'100% solar']
+
+    leg = legend(pp,txtlabels,loc='upper left',ncol=1);
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+
+    add_duplicate_yaxis(gcf(),unit_multiplier=mean(L),label='[GWh]')
+
+    tight_layout()
+    save_file_name = 'plot_country_excess_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
+
+
+# Jan. 2000:
+# plot_hourly_generation(alpha_w=None,date_start=datestr2num('1-1-2000'),monday_offset=5,titletxt='Denmark, Jan. 2000',label='Jan2000_optimal')
+# plot_hourly_generation(alpha_w=1,date_start=datestr2num('1-1-2000'),monday_offset=5,titletxt='Denmark, Jan. 2000',label='Jan2000_wind')
+# plot_hourly_generation(alpha_w=0.,date_start=datestr2num('1-1-2000'),monday_offset=5,titletxt='Denmark, Jan. 2000',label='Jan2000_solar')
+#
+# July 2000:
+# plot_hourly_generation(alpha_w=None,date_start=datestr2num('7-1-2000'),monday_offset=5,titletxt='Denmark, July 2000',label='July2000_optimal')
+# plot_hourly_generation(alpha_w=1,date_start=datestr2num('7-1-2000'),monday_offset=5,titletxt='Denmark, July 2000',label='July2000_wind')
+# plot_hourly_generation(alpha_w=0.,date_start=datestr2num('7-1-2000'),monday_offset=5,titletxt='Denmark, July 2000',label='July2000_solar')
+#
+def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, date_start=datestr2num('1-1-2000'), N_days=30, monday_offset=5, titletxt='Denmark, Jan. 2000', label='TestFigure'):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    mask = find((t+datetime_offset>=date_start)*(t+datetime_offset<=date_start+N_days))
+
+    if alpha_w==None:
+        alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)
+        print 'Mix not specified. Optimal mix alpha_w={0} chosen'.format(alpha_w)
+        
+    wind = gamma*alpha_w*Gw*mean(L)
+    solar = gamma*(1-alpha_w)*Gs*mean(L)
+    curtailment = get_positive(-(L-(wind+solar)))
+
+    wind_local = wind - curtailment*wind/(wind+solar+1e-10)
+    solar_local = solar - curtailment*solar/(wind+solar+1e-10)
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    fill_between(t[mask],wind_local[mask],color=color_wind,edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask],wind_local[mask],color=color_solar,edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask]+curtailment[mask],wind_local[mask]+solar_local[mask],color='r',edgecolor=color_edge,lw=1)
+    pp_wind = Rectangle((0, 0), 1, 1, facecolor=color_wind)
+    pp_solar = Rectangle((0, 0), 1, 1, facecolor=color_solar)
+    pp_curtailment = Rectangle((0, 0), 1, 1, facecolor='r')
+
+    pp_load = plot(t[mask],L[mask],color='k',lw=1.5)
+
+    axis(xmin=t[mask[0]],xmax=t[mask[-1]],ymin=0,ymax=2.05*mean(L))
+
+    ylabel('Power [GW]')
+
+    day_names = array([calendar.day_abbr[mod(i,7)] for i in arange(N_days)+monday_offset])
+    day_names[find([d!='Mon' for d in day_names])] = ''
+    xticks(t[mask[0]]+arange(N_days),day_names,rotation=-45,ha='left')
+
+    pp = [pp_load[0],pp_wind,pp_solar,pp_curtailment]
+    txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus']
+
+    titletxt = titletxt + '\nwind/solar mix: {0}/{1}'.format(int(round(100*alpha_w)),int(round(100*(1-alpha_w))))
+    leg = legend(pp,txtlabels,loc='upper left',ncol=4,title=titletxt);
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+
+    tight_layout()
+    save_file_name = 'plot_hourly_generation_'+ISO+'_'+label+'.pdf'
+    save_figure(save_file_name)
+
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=None,label='optimal')
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind')
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar')
+#
+def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, titletxt='Denmark, 2000-2007',label='TestFigure'):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    if alpha_w==None:
+        alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)
+        print 'Mix not specified. Optimal mix alpha_w={0} chosen'.format(alpha_w)
+    
+    wind = gamma*alpha_w*Gw*mean(L)
+    solar = gamma*(1-alpha_w)*Gs*mean(L)
+    curtailment = get_positive(-(L-(wind+solar)))
+    
+    t_month = array([d.month for d in num2date(t+datetime_offset)])
+    
+    months = arange(0,12)+1
+    load_sum, wind_sum, solar_sum, curtail_sum, weight = zeros(12), zeros(12), zeros(12), zeros(12), zeros(12)
+    for month in months:
+        load_sum[month-1] = sum(L[find(t_month==month)])
+        wind_sum[month-1] = sum((wind - curtailment*wind/(wind+solar+1e-10))[find(t_month==month)])
+        solar_sum[month-1] = sum((solar - curtailment*solar/(wind+solar+1e-10))[find(t_month==month)])
+        curtail_sum[month-1] = sum(curtailment[find(t_month==month)])
+        weight[month-1] = len(find(t_month==month))/float(len(t))
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    #Monthly values
+    pp_wind = bar(months,wind_sum*100/load_sum,color=color_wind)
+    pp_solar = bar(months,solar_sum*100/load_sum,bottom=wind_sum*100/load_sum,color=color_solar)
+    pp_curtailment = bar(months,curtail_sum*100/load_sum,bottom=(wind_sum+solar_sum)*100/load_sum,color='r')
+    
+    pp_gross = axhline(100*gamma,color='k',ls='--',lw=1.5)
+    
+    #Average values
+    bar(13.5,sum(wind_sum)*100/sum(load_sum),color=color_wind)
+    bar(13.5,sum(solar_sum)*100/sum(load_sum),bottom=sum(wind_sum)*100/sum(load_sum),color=color_solar)
+    bar(13.5,sum(curtail_sum)*100/sum(load_sum),bottom=sum(wind_sum+solar_sum)*100/sum(load_sum),color='r')
+    
+    print 'Local excess: {0} pp'.format(sum(curtail_sum)*100/sum(load_sum),bottom=sum(wind_sum+solar_sum)*100/sum(load_sum))
+    
+    axis(xmin=.5,xmax=14.75,ymin=0,ymax=100)
+    
+    month_names = array([calendar.month_abbr[m] for m in months])
+    xticks(concatenate([months,[13.5]]),concatenate([month_names,['Av.']]),rotation=-45,ha='left')
+    
+    ylabel('Percentage points (pp)')
+    
+    pp = [pp_gross,pp_wind[0],pp_solar[0],pp_curtailment[0]]
+    txtlabels = ['Gross share','Wind','Solar','Local excess']
+    titletxt = titletxt + '\nwind/solar mix: {0}/{1}'.format(int(round(100*alpha_w)),int(round(100*(1-alpha_w))))
+    leg = legend(pp,txtlabels,loc='upper left',ncol=4,title=titletxt);
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+    
+    tight_layout()
+    save_file_name = 'plot_monthly_summary_'+ISO+'_'+label+'.pdf'
+    save_figure(save_file_name)
 
 ###############
 ### Tools: ####

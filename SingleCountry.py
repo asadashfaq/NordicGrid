@@ -449,7 +449,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 # plot_hourly_generation(alpha_w=1,date_start=datestr2num('7-1-2000'),monday_offset=5,titletxt='Denmark, July 2000',label='July2000_wind')
 # plot_hourly_generation(alpha_w=0.,date_start=datestr2num('7-1-2000'),monday_offset=5,titletxt='Denmark, July 2000',label='July2000_solar')
 #
-def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, date_start=datestr2num('1-1-2000'), N_days=30, monday_offset=5, titletxt='Denmark, Jan. 2000', label='TestFigure'):
+def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('1-1-2000'), N_days=30, monday_offset=5, titletxt='Denmark, Jan. 2000', label='TestFigure'):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -458,13 +458,22 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, date_start=datestr2n
     if alpha_w==None:
         alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)
         print 'Mix not specified. Optimal mix alpha_w={0} chosen'.format(alpha_w)
-        
+                    
     wind = gamma*alpha_w*Gw*mean(L)
     solar = gamma*(1-alpha_w)*Gs*mean(L)
-    curtailment = get_positive(-(L-(wind+solar)))
+    mismatch = (wind+solar) - L
+    
+    if CS!=None or CS==0:
+        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+    else:
+        mismatch_r = mismatch
+    
+    curtailment = get_positive(mismatch_r)
+    filling = get_positive(mismatch - mismatch_r)
+    extraction = get_positive(-(mismatch - mismatch_r))
 
-    wind_local = wind - curtailment*wind/(wind+solar+1e-10)
-    solar_local = solar - curtailment*solar/(wind+solar+1e-10)
+    wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
+    solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
 
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
@@ -476,7 +485,9 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, date_start=datestr2n
 
     fill_between(t[mask],wind_local[mask],color=color_wind,edgecolor=color_edge,lw=1)
     fill_between(t[mask],wind_local[mask]+solar_local[mask],wind_local[mask],color=color_solar,edgecolor=color_edge,lw=1)
-    fill_between(t[mask],wind_local[mask]+solar_local[mask]+curtailment[mask],wind_local[mask]+solar_local[mask],color='r',edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask]+filling[mask],wind_local[mask]+solar_local[mask],color='b',edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask]+extraction[mask],wind_local[mask]+solar_local[mask],color='m',edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask]+filling[mask]+curtailment[mask],wind_local[mask]+solar_local[mask]+filling[mask],color='r',edgecolor=color_edge,lw=1)
     pp_wind = Rectangle((0, 0), 1, 1, facecolor=color_wind)
     pp_solar = Rectangle((0, 0), 1, 1, facecolor=color_solar)
     pp_curtailment = Rectangle((0, 0), 1, 1, facecolor='r')
@@ -507,7 +518,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, date_start=datestr2n
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind')
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar')
 #
-def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, titletxt='Denmark, 2000-2007',label='TestFigure'):
+def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='Denmark, 2000-2007',label='TestFigure'):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -518,16 +529,29 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, titletxt='Denmark, 20
     
     wind = gamma*alpha_w*Gw*mean(L)
     solar = gamma*(1-alpha_w)*Gs*mean(L)
-    curtailment = get_positive(-(L-(wind+solar)))
+    mismatch = (wind+solar) - L
+    
+    if CS!=None or CS==0:
+        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+    else:
+        mismatch_r = mismatch
+    
+    curtailment = get_positive(mismatch_r)
+    filling = get_positive(mismatch - mismatch_r)
+    extraction = get_positive(-(mismatch - mismatch_r))
+    
+    wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
+    solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
     
     t_month = array([d.month for d in num2date(t+datetime_offset)])
     
     months = arange(0,12)+1
-    load_sum, wind_sum, solar_sum, curtail_sum, weight = zeros(12), zeros(12), zeros(12), zeros(12), zeros(12)
+    load_sum, wind_sum, solar_sum, storage_sum, curtail_sum, weight = zeros(12), zeros(12), zeros(12), zeros(12), zeros(12), zeros(12)
     for month in months:
         load_sum[month-1] = sum(L[find(t_month==month)])
-        wind_sum[month-1] = sum((wind - curtailment*wind/(wind+solar+1e-10))[find(t_month==month)])
-        solar_sum[month-1] = sum((solar - curtailment*solar/(wind+solar+1e-10))[find(t_month==month)])
+        wind_sum[month-1] = sum(wind_local[find(t_month==month)])
+        solar_sum[month-1] = sum(solar_local[find(t_month==month)])
+        storage_sum[month-1] = sum(extraction[find(t_month==month)])
         curtail_sum[month-1] = sum(curtailment[find(t_month==month)])
         weight[month-1] = len(find(t_month==month))/float(len(t))
 
@@ -541,14 +565,16 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, titletxt='Denmark, 20
     #Monthly values
     pp_wind = bar(months,wind_sum*100/load_sum,color=color_wind)
     pp_solar = bar(months,solar_sum*100/load_sum,bottom=wind_sum*100/load_sum,color=color_solar)
-    pp_curtailment = bar(months,curtail_sum*100/load_sum,bottom=(wind_sum+solar_sum)*100/load_sum,color='r')
+    pp_storage = bar(months,storage_sum*100/load_sum,bottom=(wind_sum+solar_sum)*100/load_sum,color='g')
+    pp_curtailment = bar(months,curtail_sum*100/load_sum,bottom=(wind_sum+solar_sum+storage_sum)*100/load_sum,color='r')
     
     pp_gross = axhline(100*gamma,color='k',ls='--',lw=1.5)
     
     #Average values
     bar(13.5,sum(wind_sum)*100/sum(load_sum),color=color_wind)
     bar(13.5,sum(solar_sum)*100/sum(load_sum),bottom=sum(wind_sum)*100/sum(load_sum),color=color_solar)
-    bar(13.5,sum(curtail_sum)*100/sum(load_sum),bottom=sum(wind_sum+solar_sum)*100/sum(load_sum),color='r')
+    bar(13.5,sum(storage_sum)*100/sum(load_sum),bottom=sum(wind_sum+solar_sum)*100/sum(load_sum),color='g')
+    bar(13.5,sum(curtail_sum)*100/sum(load_sum),bottom=sum(wind_sum+solar_sum+storage_sum)*100/sum(load_sum),color='r')
     
     print 'Local excess: {0} pp'.format(sum(curtail_sum)*100/sum(load_sum),bottom=sum(wind_sum+solar_sum)*100/sum(load_sum))
     

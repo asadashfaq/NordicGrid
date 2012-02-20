@@ -439,10 +439,110 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     save_figure(save_file_name)
 
 
+def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=None):
+
+    surplus_bar = zeros(gamma_bar.shape)
+    for i in arange(len(gamma_bar)):
+        L, wind_local, solar_local, curtailment, filling, extraction = get_compare_VRES_load(ISO, gamma_bar[i], alpha_w, CS)
+
+        surplus_bar[i] = mean(curtailment)
+
+    gamma = linspace(amin(gamma_bar)-.1,amax(gamma_bar)+.1,111)
+    surplus = zeros(gamma.shape)
+    for i in arange(len(gamma)):
+        L, wind_local, solar_local, curtailment, filling, extraction = get_compare_VRES_load(ISO, gamma[i], alpha_w, CS)
+
+        surplus[i] = mean(curtailment)
+    
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    plot(gamma*100,surplus,'k-',lw=1.5,zorder=0)
+    bars = bar(gamma_bar*100,surplus_bar,align='center',width=10,color='r')
+    
+    #Label bars:
+    for i in arange(len(bars)):
+        height = bars[i].get_height()
+        if height<=0.4:
+            height = height+0.1
+        else:
+            height = height/2
+            
+        gca().text(bars[i].get_x()+bars[i].get_width()/2., height, '{0:0.1f}%\nof\n{1:0.1f} GW'.format(surplus_bar[i]*100/(gamma_bar[i]*mean(L))+1e-10,gamma_bar[i]*mean(L)),
+                ha='center', va='center')
+    
+    
+    #autolabel_bars(bars,gca(),heighttxt='{0:0.1f}%\nof\n'+'{0:0.1f} GW'.format(),scale_factors=100/(gamma_bar*mean(L)))
+
+    axis(xmin=amin(gamma_bar*100)-10,xmax=amax(gamma_bar*100)+10,ymin=0,ymax=1.05*amax(surplus_bar))
+    xticks(gamma_bar*100,['{0:.0f}%'.format(x) for x in gamma_bar*100],va='top')
+    xlabel(r'Target share of total electricity demand'.format(mean(L)))
+    ylabel('Renewable surplus [GW]')
+
+    ax=gca()
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
+    tight_layout()
+    save_file_name = 'plot_surplus_bar_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
+
+def autolabel_bars(rects,ax,heighttxt=r'{0:0.1f}',scale_factors=1):
+    # attach some text labels
+    for i in arange(len(rects)):
+        rect = rects[i]
+        if size(scale_factors)>1:
+            scale_factor = scale_factors[i]
+        else:
+            scale_factor = scale_factors
+            
+        height = rect.get_height()
+        ax.text(rect.get_x()+rect.get_width()/2., height/2., heighttxt.format(height*scale_factor),
+                ha='center', va='center',backgroundcolor='w')
+
+def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    if alpha_w==None:
+        alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)
+        if ~silent:
+            print 'Mix not specified. Optimal mix alpha_w={0} chosen'.format(alpha_w)
+                    
+    wind = gamma*alpha_w*Gw*mean(L)
+    solar = gamma*(1-alpha_w)*Gs*mean(L)
+    mismatch = (wind+solar) - L
+    
+    if CS!=None or CS==0:
+        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+    else:
+        mismatch_r = mismatch
+    
+    curtailment = get_positive(mismatch_r)
+    filling = get_positive(mismatch - mismatch_r)
+    extraction = get_positive(-(mismatch - mismatch_r))
+
+    wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
+    solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
+
+    return L, wind_local, solar_local, curtailment, filling, extraction
+
+
 # Jan. 2000:
 # plot_hourly_generation(alpha_w=None,date_start=datestr2num('1-1-2000'),monday_offset=5,titletxt='Denmark, Jan. 2000',label='Jan2000_optimal')
 # plot_hourly_generation(alpha_w=1,date_start=datestr2num('1-1-2000'),monday_offset=5,titletxt='Denmark, Jan. 2000',label='Jan2000_wind')
 # plot_hourly_generation(alpha_w=0.,date_start=datestr2num('1-1-2000'),monday_offset=5,titletxt='Denmark, Jan. 2000',label='Jan2000_solar')
+#
+# plot_hourly_generation(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Denmark, Jan. 2000',label='Jan2000_day_wind')
+# plot_hourly_generation(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Denmark, Jan. 2000',label='Jan2000_day_optimal')
 #
 # July 2000:
 # plot_hourly_generation(alpha_w=None,date_start=datestr2num('7-1-2000'),monday_offset=5,titletxt='Denmark, July 2000',label='July2000_optimal')
@@ -510,14 +610,113 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
+    ax=gca()
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
     tight_layout()
     save_file_name = 'plot_hourly_generation_'+ISO+'_'+label+'.pdf'
+    save_figure(save_file_name)
+
+# plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind')
+# plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal')
+#
+#
+# plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind_storage',CS=7.4)
+# plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal_storage',CS=7.4)
+
+def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('1-1-2000'), N_days=30, monday_offset=5, titletxt='Denmark, Jan. 2000', label='TestFigure'):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    mask = find((t+datetime_offset>=date_start)*(t+datetime_offset<=date_start+N_days))
+
+    if alpha_w==None:
+        alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)
+        print 'Mix not specified. Optimal mix alpha_w={0} chosen'.format(alpha_w)
+                    
+    wind = gamma*alpha_w*Gw*mean(L)
+    solar = gamma*(1-alpha_w)*Gs*mean(L)
+    mismatch = (wind+solar) - L
+    
+    if CS!=None or CS==0:
+        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+    else:
+        mismatch_r = mismatch
+    
+    curtailment = get_positive(mismatch_r)
+    filling = get_positive(mismatch - mismatch_r)
+    extraction = get_positive(-(mismatch - mismatch_r))
+
+    wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
+    solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    fill_between(t[mask],wind_local[mask],color=color_wind,edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask],wind_local[mask],color=color_solar,edgecolor=color_edge,lw=1)
+    p = fill_between(t[mask],wind_local[mask]+solar_local[mask]+filling[mask],wind_local[mask]+solar_local[mask],color='g',edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask]+extraction[mask],wind_local[mask]+solar_local[mask],color='g',edgecolor=color_edge,lw=1)
+    fill_between(t[mask],wind_local[mask]+solar_local[mask]+filling[mask]+curtailment[mask],wind_local[mask]+solar_local[mask]+filling[mask],color='r',edgecolor=color_edge,lw=1)
+    
+    p.set_facecolors("none")
+
+    from matplotlib.patches import PathPatch
+    for path in p.get_paths():
+        p1 = PathPatch(path, fc="none", hatch="/")
+        gca().add_patch(p1)
+        p1.set_zorder(p.get_zorder()-0.1)
+    
+    
+    
+    pp_wind = Rectangle((0, 0), 1, 1, facecolor=color_wind)
+    pp_solar = Rectangle((0, 0), 1, 1, facecolor=color_solar)
+    pp_curtailment = Rectangle((0, 0), 1, 1, facecolor='r')
+    pp_storage = Rectangle((0, 0), 1, 1, facecolor='g')
+
+    pp_load = plot(t[mask],L[mask],color='k',lw=1.5)
+
+    axis(xmin=t[mask[0]],xmax=t[mask[-1]],ymin=0,ymax=1.8*mean(L))
+
+    ylabel('Power [GW]')
+
+    day_names = array([calendar.day_abbr[mod(i,7)] for i in arange(N_days)+monday_offset])
+    #day_names[find([d!='Mon' for d in day_names])] = ''
+    xticks(t[mask[0]]+arange(N_days),day_names,rotation=-45,ha='left')
+
+    if CS==None:
+        pp = [pp_load[0],pp_wind,pp_solar,pp_curtailment]
+        txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus']
+        leg = legend(pp,txtlabels,loc='upper left',ncol=5,title=titletxt);
+    else:
+        pp = [pp_load[0],pp_wind,pp_solar,pp_curtailment,pp_storage]
+        txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus','Storage']    
+        leg = legend(pp,txtlabels,loc='upper left',ncol=5,title=titletxt);
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+
+    tight_layout()
+    save_file_name = 'plot_hourly_generation_alt_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
 
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=None,label='optimal')
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind')
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar')
 #
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=None,label='optimal_storage',CS=7.6)
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind_storage',CS=7.6)
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar_storage',CS=7.6)
+#
+# plot_monthly_summary('DK',gamma=1,alpha_w=None,label='100p_optimal')
+# plot_monthly_summary('DK',gamma=1,alpha_w=1,label='100p_wind')
 def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='Denmark, 2000-2007',label='TestFigure'):
 
     #Load data
@@ -595,6 +794,41 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     tight_layout()
     save_file_name = 'plot_monthly_summary_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
+
+
+    ### Single bar summary:
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([3,2])
+
+    ax=axes([0.03,0.03,.33,1])
+
+    #Average values
+    bar(0,mean(wind_sum)/mean(load_sum),color=color_wind,align='center',width=1)
+    bar(0,mean(solar_sum)/mean(load_sum),bottom=mean(wind_sum)/mean(load_sum),color=color_solar,align='center',width=1)
+    bar(0,mean(storage_sum)/mean(load_sum),bottom=mean(wind_sum+solar_sum)/mean(load_sum),color='g',align='center',width=1)
+    bar(0,mean(curtail_sum)/mean(load_sum),bottom=mean(wind_sum+solar_sum+storage_sum)/mean(load_sum),color='r',align='center',width=1)
+
+    axis(xmin=-.75,xmax=.75,ymin=0,ymax=1.1)
+
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.spines['left'].set_color('none')
+    
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    ax.tick_params(labelbottom=0, labeltop=0, labelleft=0, labelright=0)
+    
+    if CS==None:
+        text(0.37,0.9,'Total: {0:0.1f} GWh\nSurplus: {1:.1f}%'.format(gamma*mean(L),mean(curtail_sum)/(mean(load_sum)*gamma)*100),fontsize=10,weight='semibold',ha='left',va='top',transform = gcf().transFigure,bbox=dict(boxstyle="round, pad=.75", fc="w",lw=1.5))
+    else:
+        text(0.37,0.9,'Total: {0:0.1f} GWh\nSurplus:      {1:.1f}%\nStorage:     -{2:.1f}%\n----------------------\nRemainder: {3:.1f}%\n\nStorage volume:\n{4:.1f} GWh'.format(gamma*mean(L),mean(curtail_sum+storage_sum)/(mean(load_sum)*gamma)*100,mean(storage_sum)/(mean(load_sum)*gamma)*100,mean(curtail_sum)/(mean(load_sum)*gamma)*100,mean(L)*CS),fontsize=10,weight='semibold',ha='left',va='top',transform = gcf().transFigure,bbox=dict(boxstyle="round, pad=.75", fc="w",lw=1.5))
+
+
+    #tight_layout()
+    save_file_name = 'plot_single_bar_summary_'+ISO+'_'+label+'.pdf'
+    save_figure(save_file_name)
+
 
 ###############
 ### Tools: ####
@@ -751,7 +985,7 @@ def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, ret
 # Main function:  get_ISET_country_data()
 ###
 
-def get_ISET_country_data(ISO='DK',path='./data/'):
+def get_ISET_country_data(ISO='DK',path='./data/',silent=True):
     """
     Returns data for a specific country in the ISET data set. 
     
@@ -791,8 +1025,9 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
     try:
         #Load the data file if it exists:
         npzfile = np.load(path + filename)
-        print 'Loaded file: ', path + filename
-        sys.stdout.flush()
+        if ~silent:
+            print 'Loaded file: ', path + filename
+            sys.stdout.flush()
         
     except IOError:
         print 'Datafile does not exist:', path + filename
@@ -809,15 +1044,20 @@ def get_ISET_country_data(ISO='DK',path='./data/'):
             ISO_ = ISET2ISO_country_codes(datalabels[i])
             filename_ =  'ISET_country_' + ISO_ + '.npz'
             np.savez(path + filename_,t=t, L=L[i], Gw=GW[i]/mean(GW[i]), Gs=GS[i]/mean(GS[i]), datetime_offset=datetime_offset, datalabel=ISO_)
-            print 'Saved file: ', path + filename_
-            sys.stdout.flush()
+            if ~silent:
+                print 'Saved file: ', path + filename_
+                sys.stdout.flush()
          
         #Load the relevant file now that it has been created:       
         npzfile = np.load(path + filename)
-        print 'Loaded file: ', path + filename
-        sys.stdout.flush()
-        
-    return npzfile['t'], npzfile['L'], npzfile['Gw'], npzfile['Gs'], npzfile['datetime_offset'], npzfile['datalabel']
+        if ~silent:
+            print 'Loaded file: ', path + filename
+            sys.stdout.flush()
+    
+    t, L, Gw, Gs, datetime_offset, datalabel = npzfile['t'], npzfile['L'], npzfile['Gw'], npzfile['Gs'], npzfile['datetime_offset'], npzfile['datalabel']
+    npzfile.close()
+    
+    return t, L, Gw, Gs, datetime_offset, datalabel
 
 def valid_ISO(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
 

@@ -681,10 +681,11 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     pp_solar = Rectangle((0, 0), 1, 1, facecolor=color_solar)
     pp_curtailment = Rectangle((0, 0), 1, 1, facecolor='r')
     pp_storage = Rectangle((0, 0), 1, 1, facecolor='g')
+    pp_filling = Rectangle((0, 0), 1, 1, facecolor='none', hatch="/")
 
     pp_load = plot(t[mask],L[mask],color='k',lw=1.5)
 
-    axis(xmin=t[mask[0]],xmax=t[mask[-1]],ymin=0,ymax=1.8*mean(L))
+    axis(xmin=t[mask[0]],xmax=t[mask[-1]],ymin=0,ymax=1.9*mean(L))
 
     ylabel('Power [GW]')
 
@@ -697,9 +698,9 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
         txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus']
         leg = legend(pp,txtlabels,loc='upper left',ncol=5,title=titletxt);
     else:
-        pp = [pp_load[0],pp_wind,pp_solar,pp_curtailment,pp_storage]
-        txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus','Storage']    
-        leg = legend(pp,txtlabels,loc='upper left',ncol=5,title=titletxt);
+        pp = [pp_load[0],pp_filling,pp_wind,pp_curtailment,pp_solar,pp_storage]
+        txtlabels = ['Load ({0})'.format(ISO),'Stored surplus','Wind','Remainder surplus','Solar','Storage']    
+        leg = legend(pp,txtlabels,loc='upper left',ncol=4,title=titletxt);
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
@@ -829,6 +830,27 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     save_file_name = 'plot_single_bar_summary_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
 
+    ### Single bar summary legend
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,1])
+    
+    axis('off')
+    
+    pp_wind = Rectangle((0, 0), 1, 1, facecolor=color_wind)
+    pp_solar = Rectangle((0, 0), 1, 1, facecolor=color_solar)
+    pp_curtailment = Rectangle((0, 0), 1, 1, facecolor='r')
+    pp_storage = Rectangle((0, 0), 1, 1, facecolor='g')    
+    
+    pp = [pp_wind,pp_solar,pp_storage,pp_curtailment]
+    txtlabels = ['Wind','Solar','Storage','Surplus/Remainder']
+    leg = legend(pp,txtlabels,loc='upper left',ncol=4,frameon=False);
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+    
+    save_file_name = 'plot_single_bar_summary_legend.pdf'
+    save_figure(save_file_name)
+    
 
 ###############
 ### Tools: ####

@@ -939,7 +939,29 @@ def get_mismatch(L, GW, GS, gamma=1, alpha_w=1.,CS=None):
     else:
         return get_policy_2_storage(mismatch(alpha_w,gamma),storage_capacity = CS)[0]
 
-def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True):
+def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01, CS=None, returnall=False, normalized=True):
+    """Wraper for get_optimal_mix_balancing(). This function allows gamma to be an array."""
+
+    gamma = array(gamma,ndmin=1)
+    
+    if returnall==True:
+        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, GW, GS, gamma[0], p_interval, CS, returnall, normalized)
+        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = expand2array(alpha_w_opt,gamma), expand2array(alpha_w_opt_1p_interval,gamma), expand2array(res_load_sum_opt,gamma), expand2array(mismatch_opt,gamma), expand2array(res_load_sum_1p,gamma)
+        
+        for i in arange(1,len(gamma)):
+            alpha_w_opt[i], alpha_w_opt_1p_interval[i], res_load_sum_opt[i], mismatch_opt[i], res_load_sum_1p[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized)
+        
+        return alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p
+
+    else:
+        alpha_w_opt = zeros(gamma.shape)
+        for i in arange(len(gamma)):
+            alpha_w_opt[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized)
+        
+        return alpha_w_opt
+        
+
+def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True):
 
     L, GW, GS = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
     weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
@@ -951,16 +973,16 @@ def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, ret
     mismatch = lambda alpha_w: gamma*(alpha_w*Gw + (1.-alpha_w)*Gs) - l
 
     if CS==None:
-        res_load_sum = lambda alpha_w: sum(get_positive(-mismatch(alpha_w)))
+        res_load_sum = lambda alpha_w: sum(get_positive(-mismatch(alpha_w))) - alpha_w*0.001*sign(DefaultWind-.5)
     else:
-        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),storage_capacity = CS)[0]))
-
+        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
+    
     alpha_w_opt = fmin(res_load_sum,0.5,disp=False)
+
     if alpha_w_opt>1.:
         alpha_w_opt = 1.
     elif alpha_w_opt<0.:
         alpha_w_opt = 0.
-
 
     if normalized:
         if CS==None:

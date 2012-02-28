@@ -18,6 +18,16 @@ def get_positive(x):
     """Replaces all negative values with zeros."""
     return x*(x>0.)  #Possibly it has to be x>1e-10.    
     
+def expand2array(x,yy):
+
+    xx = kron(zeros((len(yy),1)),zeros_like(x))
+    xx[0] = x
+    
+    if size(x)==1:
+        xx = concatenate(xx)
+        
+    return xx
+    
 def save_figure(figname='TestFigure.png', fignumber=gcf().number, path='./figures/', dpi=300):
     """Wraper for savefig(). Saves figure to path+filename and prints a meassage to the screen."""
     

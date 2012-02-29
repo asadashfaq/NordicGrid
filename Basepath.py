@@ -11,120 +11,112 @@ import scipy.optimize as optimize
 from shortcuts import *
 from SingleCountry import *
 
-def main():
+##Colors, should be moved to a color module
+color_wind = (0.5,0.7,1.)
+color_solar = (1.,.8,0.)
 
-    year = array([2000,2010,2020,2030,2050])
-    gamma = array([0.1,.25,0.5,.75,1.0])
-    alpha_w = array([1.,1.,1.5/2.,2.2/3.,2.9/4.])
-    #alpha_w = array([1.,1.,1.8/2.,2.5/3.,3.2/4.])
-    gamma_wind = get_logistic_fit(year,alpha_w*gamma,year0=2000,plot_on=True,txtlabel='Wind',txttitle='Wind')
-    gamma_solar = get_logistic_fit(year,(1-alpha_w)*gamma,year0=2000,plot_on=True,txtlabel='Solar',txttitle='Solar')
+#
+# plot_optimal_path_logistic_fit(p_year=[1980,2000,2010,2020,2050,2060], p_gamma=[0.01,0.1,.25,0.5,1.0,1.2])
+#
+def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2):
+    
+    year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS, rel_tol)
 
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
 
-    close(1);figure(1); clf()
-    
+    close(1); figure(1);
     gcf().set_dpi(300)
     gcf().set_size_inches([6.5,4.5])
-    
-    #plot(arange(amin(year),amax(year),1),gamma_wind+gamma_solar)
-    plot(3.9*gamma_wind,3.9*gamma_solar)
-    axis('scaled')
-    axis(xmin=0,xmax=3.9*1.1,ymin=0,ymax=3.9*1.1)
-    xlabel(r'Av. wind power [GWh/h]')
-    ylabel(r'Av. solar PV power [GWh/h]')
-    
+
+    bar(year,alpha_w*gamma,color=color_wind,align='center',label='Wind')
+    bar(year,(1-alpha_w)*gamma,bottom=alpha_w*gamma,color=color_solar,align='center',label='Solar')    
+
+    plot(p_year,p_gamma,'ko')
+
+    axis(xmin=amin(year)-1,xmax=amax(year)+1,ymin=0,ymax=1.05*amax(p_gamma))
+
+    xlabel('Reference year')
+    ylabel('Gross share')
+
+    leg = legend(loc='upper left',title='Optimal build-up')
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+
     tight_layout()
-    save_figure('TestFigure.png')
-
+    save_file_name = 'plot_optimal_path_logistic_fit_'+ISO+'.pdf'
+    save_figure(save_file_name)
 
 #
-# get_optimal_path_and_logistic_fit([1980,2000,2010,2020,2050],[0.01,0.1,.25,0.5,1.0])
+# get_optimal_path_logistic_fit(p_year=[1980,2000,2010,2020,2050], p_gamma=[0.01,0.1,.25,0.5,1.0]);
 #
-def get_optimal_path_and_logistic_fit(p_year, p_gamma, year=None, ISO='DK', CS=None, dgamma=.05):
+def get_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2):
+    """Combines targets for gamma with the optimal path to get an optimal build-up of wind and solar. Both follow a logistic growth."""
 
     p_year, p_gamma = array(p_year,ndmin=1), array(p_gamma,ndmin=1)
-
+    
     if year==None:
-        year = arange(amin(p_year),amax(p_year),1)
-
+        year = arange(amin(p_year),amax(p_year)+1,1)
+        
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('DK')
+    
+    ## Initial estimate of gamma vs year
+    p_alpha_w_opt = get_optimal_path_balancing(L,Gw,Gs,p_gamma,CS=CS)
+    year, gamma, alpha_w = get_wind_solar_logistic_fit(p_year, p_gamma, p_alpha_w_opt, year0, year)
+    
+    ## Iterate to get better match with the optimal mix. The gamma vs year estimate is used to provide a better and continous match to the optimal path. Otherwise few targets can result in large deviations from the optimal path.
+    rel_err = 1000; rel_goodness_old = 1000; i=0
+    while rel_err>rel_tol or i>10:
+        i+=1
+        gamma_w_old = gamma*alpha_w
+        
+        alpha_w_opt = get_optimal_path_balancing(L,Gw,Gs,gamma,CS=CS)
+        year, gamma, alpha_w = get_wind_solar_logistic_fit(year, gamma, alpha_w_opt, year0, year)
 
-    ## Find gamma vs. year
-    gamma = get_logistic_fit(p_year,p_gamma,year=year,plot_on=True,txtlabel=ISO+'_test',txttitle=ISO+'_test')
-
-    ## Find optimal mix vs gamma
-    #gamma = arange(amin(p_gamma),amax(p_gamma),dgamma)
-    alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L,Gw,Gs,gamma,returnall=True)
-    p_alpha_w_opt = interp(p_gamma,gamma,alpha_w_opt)
+        rel_goodness = amax(abs(gamma_w_old - gamma*alpha_w))
+        rel_err = abs(rel_goodness - rel_goodness_old)
+        rel_goodness_old = rel_goodness    
     
-    
-    
-    
-    close(1);figure(1)
-    plot(year,alpha_w_opt*gamma,'b')
-    plot(year,(1-alpha_w_opt)*gamma,'y')
-    
-    plot(p_year,p_alpha_w_opt*p_gamma,'o')
-    
-    axis(ymin=0,ymax=1)
-    
-    tight_layout()
-    save_figure('TestFigure.png')
-    
-    return p_alpha_w_opt
-
-#
-# plot_wind_solar_logistic_fit(p_year=[1980,2000,2010,2020,2050], p_gamma=[0.01,0.1,.25,0.5,1.0], p_alpha_w=[1.,1,.9,.75,.75])
-#
-def plot_wind_solar_logistic_fit(p_year, p_gamma, p_alpha_w, year0=1980., year=None):
-
-    year, gamma, alpha_w = get_wind_solar_logistic_fit(p_year, p_gamma, p_alpha_w, year0, year)
-
-    close(1); figure(1)
-    
-    plot(year,gamma*alpha_w)
-    plot(year,gamma*(1-alpha_w))
-    
-    plot(year,gamma,lw=2)
-    
-    plot(p_year,p_gamma,'o')
-    
-    axis(ymin=0,ymax=1)
-    
-    tight_layout()
-    save_figure('TestFigure.png')
+    return year, gamma, alpha_w
 
 #
 # get_wind_solar_logistic_fit(p_year=[1980,2000,2010,2020,2050], p_gamma=[0.01,0.1,.25,0.5,1.0], p_alpha_w=[1.,1,.9,.75,.75])
 #
 def get_wind_solar_logistic_fit(p_year, p_gamma, p_alpha_w, year0=1980., year=None):
+    """Combine targets for both gamma and alpha_w in one fit. Both wind and solar are required to follow a logistic growth."""
 
     p_year, p_gamma, p_alpha_w = array(p_year,ndmin=1), array(p_gamma,ndmin=1), array(p_alpha_w,ndmin=1)
 
     if year==None:
-        year = arange(amin(p_year),amax(p_year),1)
+        year = arange(amin(p_year),amax(p_year)+1,1)
 
-    f_logistic = lambda p, x, x0: p[0]*abs(p[2])*exp(p[1]*(x-x0))/(abs(p[2])+p[0]*(exp(p[1]*(x-x0))-1.)) # p is a lenth 3 array
+    f_logistic = lambda p, x, x0: abs(p[0])*abs(p[2])*exp(abs(p[1])*(x-x0))/(abs(p[2])+abs(p[0])*(exp(abs(p[1])*(x-x0))-1.)) # p is a lenth 3 array
 
     f_gamma_w = lambda pp, year: f_logistic(pp[0:3],year,year0)
     f_gamma_s = lambda pp, year: f_logistic(pp[3:6],year,year0)
     f_gamma = lambda pp, year: f_gamma_w(pp,year) + f_gamma_s(pp,year)
     f_alpha_w = lambda pp, year: f_gamma_w(pp,year)/f_gamma(pp,year)
     
-    errfunc = lambda pp, year, gamma, alpha_w: concatenate([f_gamma(pp,year)-gamma,f_alpha_w(pp,year)-alpha_w]) # pp is a length 6 array.
+    #errfunc = lambda pp, year, gamma, alpha_w: concatenate([(f_gamma(pp,year)-gamma),(f_alpha_w(pp,year)-alpha_w)]) # pp is a length 6 array.
+    
+    #This error function treats wind and solar in the same way. The in the one above emphasis can be placed on either mix or on gamma.
+    errfunc = lambda pp, year, gamma, alpha_w: concatenate([(f_alpha_w(pp,year)*f_gamma(pp,year)-alpha_w*gamma),((1-f_alpha_w(pp,year))*f_gamma(pp,year)-(1-alpha_w)*gamma)]) # pp is a length 6 array.
 
-    pp_0 = [amin(p_gamma), .01, amax(p_gamma), amin(p_gamma), .01, amax(p_gamma)] # Initial guess for the parameters
+    pp_0 = [amin(p_alpha_w*p_gamma), .01, amax(p_alpha_w*p_gamma), amin((1-p_alpha_w)*p_gamma), .01, amax((1-p_alpha_w)*p_gamma)] # Initial guess for the parameters
     pp_fit, success = optimize.leastsq(errfunc, pp_0[:], args=(p_year, p_gamma, p_alpha_w))
 
     return year, f_gamma(pp_fit,year), f_alpha_w(pp_fit,year)
 
 
+
+
+
+
+# May be obsolete. I have to make sure though.
 def get_logistic_fit(p_year,p_gamma,year0=1980,year=None,plot_on=False,p_historical=None,txtlabel=None,txttitle=None):
     
     if year==None:
-        year = arange(amin(p_year),amax(p_year),1)
+        year = arange(amin(p_year),amax(p_year)+1,1)
     
     fitfunc = lambda p, x: p[0]*abs(p[3])*exp(p[1]*(x-year0))/(abs(p[3])+p[0]*(exp(p[1]*(x-year0))-1.))
     errfunc = lambda p, x, y, weight: (fitfunc(p, x) - y)/weight # Distance to the target function
@@ -138,6 +130,7 @@ def get_logistic_fit(p_year,p_gamma,year0=1980,year=None,plot_on=False,p_histori
 
     return fitfunc(p_fit,year)
     
+# May be obsolete. I have to make sure though.    
 def plot_logistic_fit(year,gamma_fit,p_year,p_gamma,p_historical=None,txtlabel=None,txttitle=None):
 
     if p_historical==None:

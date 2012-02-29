@@ -438,6 +438,34 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     save_file_name = 'plot_country_excess_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
+def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,21), alpha_w=1., CS=6):
+
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('DK')
+
+    ## Scenario 1: Fixed alpha_w
+    res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
+    res_load_sum = get_balancing(L, Gw, Gs, gamma, alpha_w, CS)[0]/len(L)
+
+    ## Scenario 2: Optimal alpha_w
+    alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
+    alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=CS, returnall=True)
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+    
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    plot(gamma,res_load_sum_0 - res_load_sum)
+    plot(gamma,res_load_sum_opt_0/len(L) - res_load_sum_opt/len(L))
+
+    xlabel('Gross share')
+    ylabel('Storage throughput')
+
+    tight_layout()
+    save_file_name = 'plot_value_of_storage_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
 
 def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=None):
 
@@ -623,6 +651,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
 # plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind')
 # plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal')
 #
+# plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=2,monday_offset=7,titletxt='Spring week, wind only',label='week_wind')
 #
 # plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind_storage',CS=7.4)
 # plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal_storage',CS=7.4)

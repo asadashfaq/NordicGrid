@@ -278,13 +278,13 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     gcf().set_dpi(300)
     gcf().set_size_inches([6.5,4.5])
     
-    conv_x = lambda gamma, alpha_w: mean(L)*gamma*alpha_w
-    conv_y = lambda gamma, alpha_w: mean(L)*gamma*(1-alpha_w)
+    conv_x = lambda gamma, alpha_w: mean(L)*365*24/1e3*gamma*alpha_w
+    conv_y = lambda gamma, alpha_w: mean(L)*365*24/1e3*gamma*(1-alpha_w)
 
     plot(conv_x(gamma[mask],alpha_w_opt[mask]),conv_y(gamma[mask],alpha_w_opt[mask]),'w-',lw=2)
 
     #fill_between(conv_x(gamma,amax(gamma)*ones(len(gamma))),amax(gamma)*ones(len(gamma)),color=bg_color,edgecolor=(0,0,0,0))
-    fill(mean(L)*concatenate([gamma,[0]]),mean(L)*concatenate([zeros(gamma.shape),[amax(gamma)]]),color=bg_color,edgecolor=(0,0,0,0))
+    fill(mean(L)*365*24/1e3*concatenate([gamma,[0]]),mean(L)*365*24/1e3*concatenate([zeros(gamma.shape),[amax(gamma)]]),color=bg_color,edgecolor=(0,0,0,0))
 
     pp = list(zeros(1+len(p_interval)))
     for j in arange(len(p_interval))[::-1]:
@@ -306,25 +306,25 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     pp = list(pp)
 
     ## Guide lines
-    plot(.2*array([0.,mean(L)]),.2*array([mean(L),0]),'k--',lw=1)
-    text(.05*mean(L),.2*mean(L)-.025*mean(L),r'20%',weight='semibold',fontsize=10)
+    plot(.2*array([0.,mean(L)*365*24/1e3]),.2*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
+    text(.05*mean(L)*365*24/1e3,.2*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'20%',weight='semibold',fontsize=10)
     
-    plot(.5*array([0.,mean(L)]),.5*array([mean(L),0]),'k--',lw=1)
-    text(.05*mean(L),.5*mean(L)-.025*mean(L),r'50%',weight='semibold',fontsize=10)
+    plot(.5*array([0.,mean(L)*365*24/1e3]),.5*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
+    text(.05*mean(L)*365*24/1e3,.5*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'50%',weight='semibold',fontsize=10)
     
-    plot(1.*array([0.,mean(L)]),1.*array([mean(L),0]),'k--',lw=1)
-    text(.05*mean(L),1.*mean(L)-.025*mean(L),r'100%',weight='semibold',fontsize=10)
+    plot(1.*array([0.,mean(L)*365*24/1e3]),1.*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
+    text(.05*mean(L)*365*24/1e3,1.*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'100%',weight='semibold',fontsize=10)
     
 
     ## Present state
-    gamma_present,alpha_w_present, label_present = .22*mean(L), 0.0, '2010'
+    gamma_present,alpha_w_present, label_present = .22*mean(L)*365*24/1e3, 0.0, '2010'
     plot(gamma_present,alpha_w_present,'o',ms=10,mfc='k',mec='w',mew=1)
-    text(gamma_present+.025*mean(L),alpha_w_present+.025*mean(L),label_present,va='bottom',ha='left',weight='semibold',fontsize=10)
+    text(gamma_present+.025*mean(L)*365*24/1e3,alpha_w_present+.025*mean(L)*365*24/1e3,label_present,va='bottom',ha='left',weight='semibold',fontsize=10)
 
-    axis(xmin=0,xmax=mean(L)*amax(gamma),ymin=0,ymax=mean(L)*amax(gamma))
+    axis(xmin=0,xmax=mean(L)*365*24/1e3*amax(gamma),ymin=0,ymax=mean(L)*365*24/1e3*amax(gamma))
     axis('scaled')
-    xlabel(r'Av. wind power [GWh/h]')
-    ylabel(r'Av. solar PV power [GWh/h]')
+    xlabel(r'Wind energy per year [TWh]')
+    ylabel(r'Solar energy per year [TWh]')
     
     ax=gca()
     ax.spines['top'].set_color('none')
@@ -332,9 +332,9 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    txtlabels = ['0-1 pp','1-5 pp',' >5 pp']
+    txtlabels = ['0 - 0.35 TWh','0.35 - 1.7 TWh',' >1.7 TWh']
 
-    leg = legend(pp,txtlabels,loc='upper right',ncol=2,title='Deviation from optimal mix');
+    leg = legend(pp,txtlabels,loc='upper right',ncol=2,title='Additional surplus');
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
@@ -438,17 +438,36 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     save_file_name = 'plot_country_excess_vs_gamma_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
-def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,21), alpha_w=1., CS=6):
 
-    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('DK')
+#
+# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,111), CS=linspace(0,27,111))
+#
+def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None):
 
-    ## Scenario 1: Fixed alpha_w
-    res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
-    res_load_sum = get_balancing(L, Gw, Gs, gamma, alpha_w, CS)[0]/len(L)
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
 
-    ## Scenario 2: Optimal alpha_w
-    alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
-    alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=CS, returnall=True)
+    ## Baseline, no storage
+    if alpha_w==None:
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
+    else:
+        res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
+        alpha_w_path = alpha_w*ones_like(gamma)
+
+    Gamma_, CS_ = meshgrid(gamma,CS)
+    alpha_w_ = kron(array(ones_like(gamma),ndmin=2).transpose(),alpha_w_path)
+    res_load_sum_0_ = kron(array(ones_like(gamma),ndmin=2).transpose(),res_load_sum_0)
+    
+    Surplus_ = zeros_like(Gamma_)
+    for i in arange(len(Gamma_.flat)):
+        Surplus_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i])[0]/len(L) + 0.001
+
+
+    Deviation_from_target = Gamma_ - (1 - Surplus_)
+
+    from matplotlib.colors import ListedColormap, BoundaryNorm
+    color=[(0.53,0.73,0.37), (1.,.82,.20), bg_color]
+    cmap = ListedColormap(color)
+    norm = BoundaryNorm([0, 0.01, 0.05, 1], cmap.N)
 
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
@@ -457,15 +476,71 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,21), alpha_w=1., CS=6)
     gcf().set_dpi(300)
     gcf().set_size_inches([6.5,4.3])
 
-    plot(gamma,res_load_sum_0 - res_load_sum)
-    plot(gamma,res_load_sum_opt_0/len(L) - res_load_sum_opt/len(L))
+    contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Deviation_from_target,[0,.01,0.05,1.],cmap=cmap,norm=norm)
 
-    xlabel('Gross share')
-    ylabel('Storage throughput')
+    axvline(.25*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
+    axvline(.5*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
+    axvline(.75*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
+    axvline(1.*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
+
+    text(.25*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'25%',weight='semibold',fontsize=10,ha='right')
+    text(.5*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'50%',weight='semibold',fontsize=10,ha='right')
+    text(.75*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'75%',weight='semibold',fontsize=10,ha='right')
+    text(1.0*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'100%',weight='semibold',fontsize=10,ha='right')
+
+    xlabel('Wind plus solar energy (optimal mix) [TWh]')
+    ylabel('Storage volume [GWh]')
+    
+    pp = [Rectangle((0, 0), 1, 1, color=c,lw=1) for c in color]
+    txtlabels = ['0 - 0.35 TWh','0.35 - 1.7 TWh',' >1.7 TWh']
+
+    leg = legend(pp,txtlabels,loc='upper left',ncol=2,title='Surplus - Storage output');
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
 
     tight_layout()
-    save_file_name = 'plot_value_of_storage_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_file_name = 'plot_value_of_storage_'+ISO+'.pdf'
     save_figure(save_file_name)
+    
+def plot_value_of_storage_alt(ISO='DK', gamma=[.25,.50,.75,1.00], CS=[1,15,30,60], alpha_w=None):
+
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    ## Baseline, no storage
+    if alpha_w==None:
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
+    else:
+        res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
+        alpha_w_path = alpha_w*ones_like(gamma)
+
+    Gamma_, CS_ = meshgrid(gamma,CS)
+    alpha_w_ = kron(array(ones_like(gamma),ndmin=2).transpose(),alpha_w_path)
+    res_load_sum_0_ = kron(array(ones_like(gamma),ndmin=2).transpose(),res_load_sum_0)
+    
+    Surplus_ = zeros_like(Gamma_)
+    for i in arange(len(Gamma_.flat)):
+        Surplus_.flat[i] = (res_load_sum_0_.flat[i] - get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i])[0])/len(L)*mean(L*365*24)/1e3
+
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+    
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+#    contourf(Gamma_, CS_, Surplus_,mean(L*365*24)/1e3*array([0,0.01,0.05,1]))
+    contourf(Gamma_, CS_, Surplus_)
+
+    xlabel('Gross share')
+    ylabel('Storage volume')
+    
+    colorbar()
+
+    tight_layout()
+    save_file_name = 'plot_value_of_storage_'+ISO+'.pdf'
+    save_figure(save_file_name)    
+    
 
 def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=None):
 
@@ -753,8 +828,11 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
 
     if alpha_w==None:
-        alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)
+        alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)[0]
+        optimal = True
         print 'Mix not specified. Optimal mix alpha_w={0} chosen'.format(alpha_w)
+    else:
+        optimal = False
     
     wind = gamma*alpha_w*Gw*mean(L)
     solar = gamma*(1-alpha_w)*Gs*mean(L)
@@ -856,8 +934,86 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
 
 
     #tight_layout()
-    save_file_name = 'plot_single_bar_summary_'+ISO+'_'+label+'.pdf'
+    #save_file_name = 'plot_single_bar_summary_'+ISO+'_'+label+'.pdf'
+    #save_figure(save_file_name)
+
+    ### Single bar summary (alternative):
+    from matplotlib import rc
+    rc('text', usetex=True)
+    rc('font', family='sans-serif')
+    matplotlib.rcParams['text.latex.preamble'] = '\usepackage{color}'
+    
+    
+    
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([3,2])
+
+    ax=axes([0.03,0.03,.33,1])
+
+    #Average values
+    bar(0,mean(wind_sum)/mean(load_sum),color=color_wind,align='center',width=1)
+    bar(0,mean(solar_sum)/mean(load_sum),bottom=mean(wind_sum)/mean(load_sum),color=color_solar,align='center',width=1)
+    bar(0,mean(storage_sum)/mean(load_sum),bottom=mean(wind_sum+solar_sum)/mean(load_sum),color='g',align='center',width=1)
+    bar(0,mean(curtail_sum)/mean(load_sum),bottom=mean(wind_sum+solar_sum+storage_sum)/mean(load_sum),color='r',align='center',width=1)
+
+    axis(xmin=-.75,xmax=.75,ymin=0,ymax=1.1)
+
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.spines['left'].set_color('none')
+    
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    ax.tick_params(labelbottom=0, labeltop=0, labelleft=0, labelright=0)
+    
+
+    if optimal == True:
+       tabletitle = 'Optimal mix' 
+    elif alpha_w==1:
+        tabletitle = r'100\% wind'
+    elif alpha_w==0:
+        tabletitle = r'100\% solar'       
+    else:
+       tabletitle = '{0:0.0f}\% wind, {1:0.0f}\% solar'.format(100*alpha_w,(1-alpha_w)*100)
+    
+    print tabletitle
+    
+    if CS==None:
+       
+        #tabletext = r'\begin{tabular}{ l r } \multicolumn{2}{c}{\bf RES-E budget (DK)} \\[.5ex]' + \
+        
+        tabletext = r'\begin{tabular}{ l r } \multicolumn{2}{c}{\bf ' + tabletitle + r'} \\[.5ex]' + \
+            r'Consumed & ' + '{0:0.1f}'.format(sum(wind_sum+solar_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh \\ ' + \
+            r'Surplus & ' + '{0:0.1f}'.format(sum(curtail_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh  \\ \hline ' + \
+            r'Total &  ' + '{0:0.1f}'.format(gamma*mean(L)*24*365/1e3) + r'\phantom{)} TWh \\[1ex]' + \
+            r'\multicolumn{2}{l}{\it No storage.} \\' + \
+            r'\end{tabular}'
+        text(0.37,0.9,tabletext,fontsize=10,weight='semibold',ha='left',va='top',transform = gcf().transFigure,bbox=dict(boxstyle="round, pad=.75", fc="w",lw=1.5))
+        
+    else:
+        
+        tabletext = r'\begin{tabular}{ l r } \multicolumn{2}{c}{\bf ' + tabletitle + r'} \\[.5ex]' + \
+            r'Consumed & ' + '{0:0.1f}'.format(sum(wind_sum+solar_sum+storage_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh \\ ' + \
+            r'Surplus & ' + '{0:0.1f}'.format(sum(curtail_sum+storage_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh  \\ ' + \
+            r'Storage & (' + '{0:0.1f}'.format(sum(storage_sum)/len(L)*24*365/1e3) + r') TWh  \\ \hline ' + \
+            r'Total &  ' + '{0:0.1f}'.format(gamma*mean(L)*24*365/1e3) + r'\phantom{)} TWh \\[1ex]' + \
+            r'\multicolumn{2}{l}{\it Storage volume:} \\' + \
+            r'\multicolumn{2}{l}{'+'{0:0.0f}'.format(mean(L)*CS)+r' GWh} \\' + \
+            r'\end{tabular}'
+
+
+        text(0.37,0.9,tabletext,fontsize=10,weight='semibold',ha='left',va='top',transform = gcf().transFigure,bbox=dict(boxstyle="round, pad=.75", fc="w",lw=1.5))       
+        
+        #r'Storage & (' + '{0:0.1f}'.format(sum(storage_sum)/len(L)*24*365/1e3) + r') TWh  \\ \hline ' + \
+        
+        #text(0.37,0.9,'Total: {0:0.1f} TWh\nSurplus:      {1:.1f} TWh\nStorage:     -{2:.1f} TWh\n----------------------\nRemainder: {3:.1f}%\n\nStorage volume:\n{4:.1f} GWh'.format(gamma*mean(L),mean(curtail_sum+storage_sum)/(mean(load_sum)*gamma)*100,mean(storage_sum)/(mean(load_sum)*gamma)*100,mean(curtail_sum)/(mean(load_sum)*gamma)*100,mean(L)*CS),fontsize=10,weight='semibold',ha='left',va='top',transform = gcf().transFigure,bbox=dict(boxstyle="round, pad=.75", fc="w",lw=1.5))
+
+
+    #tight_layout()
+    save_file_name = 'plot_single_bar_summary_alt_'+ISO+'_{0:0.0f}p_'.format(gamma*100)+label+'.pdf'
     save_figure(save_file_name)
+
 
     ### Single bar summary legend
     close(1); figure(1); clf()
@@ -867,13 +1023,14 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     axis('off')
     
     pp_wind = Rectangle((0, 0), 1, 1, facecolor=color_wind)
+
     pp_solar = Rectangle((0, 0), 1, 1, facecolor=color_solar)
     pp_curtailment = Rectangle((0, 0), 1, 1, facecolor='r')
     pp_storage = Rectangle((0, 0), 1, 1, facecolor='g')    
     
     pp = [pp_wind,pp_solar,pp_storage,pp_curtailment]
-    txtlabels = ['Wind','Solar','Storage','Surplus/Remainder']
-    leg = legend(pp,txtlabels,loc='upper left',ncol=4,frameon=False);
+    txtlabels = ['Wind','Solar','Storage output','Surplus - Storage output']
+    leg = legend(pp,txtlabels,loc='upper left',ncol=2,frameon=False);
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
     

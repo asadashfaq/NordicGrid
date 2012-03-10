@@ -16,35 +16,74 @@ color_wind = (0.5,0.7,1.)
 color_solar = (1.,.8,0.)
 
 #
-# plot_optimal_path_logistic_fit(p_year=[1980,2000,2010,2020,2050,2060], p_gamma=[0.01,0.1,.25,0.5,1.0,1.2])
+# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0])
+# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=7.6,label='storage')
 #
-def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2):
+def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2,label=''):
+    
+    p_gamma = array(p_gamma,ndmin=1)
     
     year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS, rel_tol)
 
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    
+    wind_sum, solar_sum, surplus_sum, storage_sum = zeros_like(year), zeros_like(year), zeros_like(year), zeros_like(year)
+    for i in arange(len(year)):
+    
+        wind = gamma[i]*alpha_w[i]*Gw*mean(L)
+        solar = gamma[i]*(1-alpha_w[i])*Gs*mean(L)
+        mismatch = (wind+solar) - L
+    
+        if CS!=None or CS==0:
+            mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        else:
+            mismatch_r = mismatch
+    
+        curtailment = get_positive(mismatch_r)
+        filling = get_positive(mismatch - mismatch_r)
+        extraction = get_positive(-(mismatch - mismatch_r))
+    
+        wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
+        solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
+    
+        wind_sum[i] = mean(wind_local)*365*24
+        solar_sum[i] = mean(solar_local)*365*24
+        surplus_sum[i] = mean(curtailment)*365*24
+        storage_sum[i] = mean(extraction)*365*24
+    
+
     #Set plot options	
+    matplotlib.rcdefaults()
     matplotlib.rcParams['font.size'] = 10
 
     close(1); figure(1);
     gcf().set_dpi(300)
     gcf().set_size_inches([6.5,4.5])
 
-    bar(year,alpha_w*gamma,color=color_wind,align='center',label='Wind')
-    bar(year,(1-alpha_w)*gamma,bottom=alpha_w*gamma,color=color_solar,align='center',label='Solar')    
+    bar(year,wind_sum/1e3,color=color_wind,align='center',label='Wind')
+    bar(year,solar_sum/1e3,bottom=wind_sum/1e3,color=color_solar,align='center',label='Solar')    
+    if CS!=None:
+        bar(year,storage_sum/1e3,bottom=(wind_sum+solar_sum)/1e3,color='green',align='center',label='Storage output')    
+        bar(year,surplus_sum/1e3,bottom=(wind_sum+solar_sum+storage_sum)/1e3,color='red',align='center',label='Surplus - Storage output')    
+    else:
+        bar(year,surplus_sum/1e3,bottom=(wind_sum+solar_sum)/1e3,color='red',align='center',label='Surplus')
 
-    plot(p_year,p_gamma,'ko')
+    plot(p_year,p_gamma*mean(L)*365*24/1e3,'ko',label='Target')
 
-    axis(xmin=amin(year)-1,xmax=amax(year)+1,ymin=0,ymax=1.05*amax(p_gamma))
+    for y, g in zip(p_year,p_gamma):
+        text(y-1.,g*mean(L)*365*24/1e3,'{0:0.0f}%'.format(g*100),ha='right',va='bottom',weight='bold',fontsize=12)
+
+    axis(xmin=amin(year)-1,xmax=amax(year)+1,ymin=0,ymax=1.05*amax(p_gamma*mean(L)*365*24/1e3))
 
     xlabel('Reference year')
-    ylabel('Gross share')
+    ylabel('Energy [TWh]')
 
     leg = legend(loc='upper left',title='Optimal build-up')
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
     tight_layout()
-    save_file_name = 'plot_optimal_path_logistic_fit_'+ISO+'.pdf'
+    save_file_name = 'plot_optimal_path_logistic_fit_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
 
 #

@@ -47,6 +47,10 @@ color_edge = (.2,.2,.2)
 # year_cu, data_nodes_cu, data_flows_cu = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=1,path_nodes='./data/nodes/copper/')
 #
 #
+# REQUEST BY NINGLING. DK-W to DE-N reduced from 1500 to 500 MW.
+# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,constraints='constraints_2011_mod.txt',path_nodes='./data/nodes/constraints_2011_mod/',add_color=True)
+#
+
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
 
     #Initialize
@@ -77,8 +81,11 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence
             print 'Gamma: ' + str(Gamma.transpose()[i])
             sys.stdout.flush()
             
-            #Calculate flows
+            ## Calculate flows
             N,F = zdcpf(N,incidence=incidence,constraints=constraints,setupfile=setupfile,path=path,coop=coop,copper=copper,lapse=lapse)
+            
+            ## New implementation. Switch zdcpf to another branch first.
+            # F = sdcpf(N,admat='admat.txt',path='./settings/',copper=0,lapse=None,b=None,h0=None)
             
             if add_color:
                 N.add_colored_import(F,lapse=lapse)
@@ -164,6 +171,10 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 # plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=None,datalabel='Denmark')
 # plot_generation_summary_vs_year_2(year_cu,data_nodes_cu,node_id=[2,3],lapse=None,datalabel='Denmark_copper')
 # 
+#
+# REQUEST BY NINGLING. DK-W to DE-N reduced from 1500 to 500 MW.
+# plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=None,datalabel='Denmark_2011_mod')
+#
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
 
     N = data_nodes[0]

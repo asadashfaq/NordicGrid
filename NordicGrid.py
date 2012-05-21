@@ -50,11 +50,13 @@ color_edge = (.2,.2,.2)
 # REQUEST BY NINGLING. DK-W to DE-N reduced from 1500 to 500 MW.
 # year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,constraints='constraints_2011_mod.txt',path_nodes='./data/nodes/constraints_2011_mod/',add_color=True)
 #
+# TEST sdcpf:
+# year, data_nodes, data_flows = get_nodes_and_flows_vs_year()
 
-def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
+def get_nodes_and_flows_vs_year(year=linspace(1985,2053,3),admat='admat_2011.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_data='./data/',files_data=['ISET_NordicGrid_NO.npz','ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-W.npz','ISET_NordicGrid_DK-E.npz','ISET_NordicGrid_DE-N.npz'],path_nodes='./data/nodes/'):
 
     #Initialize
-    N = Nodes()
+    N = Nodes(path=path_data,files=files_data)
     Gamma = get_basepath_gamma(year)
     dirList = os.listdir(path_nodes)
     
@@ -82,10 +84,10 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence
             sys.stdout.flush()
             
             ## Calculate flows
-            N,F = zdcpf(N,incidence=incidence,constraints=constraints,setupfile=setupfile,path=path,coop=coop,copper=copper,lapse=lapse)
+            # N,F = zdcpf(N,incidence=incidence,constraints=constraints,setupfile=setupfile,path=path,coop=coop,copper=copper,lapse=lapse)
             
             ## New implementation. Switch zdcpf to another branch first.
-            # F = sdcpf(N,admat='admat.txt',path='./settings/',copper=0,lapse=None,b=None,h0=None)
+            N, F = sdcpf(N,admat=admat,path=path,lapse=lapse)
             
             if add_color:
                 N.add_colored_import(F,lapse=lapse)

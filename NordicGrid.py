@@ -47,6 +47,12 @@ color_edge = (.2,.2,.2)
 # year_cu, data_nodes_cu, data_flows_cu = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=1,path_nodes='./data/nodes/copper/')
 #
 #
+# FOR NINGLING, MAY 2012:
+# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,path_nodes='./data/nodes/constraints_2011_mod/')
+#
+# year_ref, data_nodes_ref, data_flows_ref = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,path_nodes='./data/nodes/constraints_2011_new/')
+#
+#
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
 
     #Initialize
@@ -363,6 +369,10 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
 #    
 # plot_colored_import_export(year, data, lapse=None)
 #    
+# FOR NINGLING, MAY 2012:
+# plot_colored_import_export(year, data_nodes, datalabel='2011_mod')
+# plot_colored_import_export(year_ref, data_nodes_ref, datalabel='2011_ref')
+#
 def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=None, datalabel=''):
     region_names = ['NO','SE','DK-W','DK-E','DE-N']
     Nodes = data[0]
@@ -539,7 +549,7 @@ def plot_gross_net_total_share(year,data_nodes,node_id=2,lapse=None,ROI=[.2,.5],
     save_figure('plot_gross_net_total_share_'+label+'.pdf')
     
 
-def plot_flow_statistics(data_flows,i_year = 10,i_link = 4):
+def plot_flow_statistics(data_flows,i_year = 10,i_link = 4,savelabel='test'):
 
     
     flows = data_flows[i_year]
@@ -552,8 +562,100 @@ def plot_flow_statistics(data_flows,i_year = 10,i_link = 4):
     
     axis(xmin=1.1*amin(flows[i_link]),xmax=1.1*amax(flows[i_link]),ymin=0, ymax=1.1*amax(h_data[find(abs(bins[1:])>=2*abs(bins[0]-bins[1]))]))
 
-    save_figure('plot_flow_statistics_test.pdf')
+    save_figure('plot_flow_statistics_'+savelabel+'.pdf')
+
+def plot_surplus_statistics(year,data_nodes,i_year = [10],i_node = 2,savelabel='test',n_bins=21,xmax=4500,ymax=500,xline=[3790,2790]):
+
     
+    
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+    
+    surplus = []
+    legendlabels = []
+    for i in i_year:
+        surplus.append(get_positive(data_nodes[i][i_node].mismatch))
+        legendlabels.append('{0:0.0f}'.format(year[i]))
+    
+    surplus = array(surplus).transpose()
+    
+    bins = linspace(0,1.01*amax(surplus),n_bins)
+    weights = 365*24*ones(surplus.shape)/len(surplus)#/abs(bins[0]-bins[1])
+    
+    h_data, bins, patch = hist(surplus,bins,normed=False,weights=weights,label=legendlabels)
+    
+    for x in xline:
+        axvline(x,ls='--',color='k')
+        text(x+abs(bins[0]-bins[1])*.25,0.8*ymax,'{0:0.0f} MW'.format(x))
+    
+    xlabel('Power [MW]')
+    ylabel('Frequency [hours/yr]')
+    axis(xmin=0,xmax=xmax,ymin=0, ymax=ymax)
+    
+
+    leg = legend(title='Surplus',loc='upper left')
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')  
+
+    tight_layout()
+    save_figure('plot_surplus_statistics_'+savelabel+'.pdf')
+
+    
+# FOR NINGLING, MAY 2012:
+#
+# DK-W -> DE-N
+# plot_compare_flow_statistics(year,data_flows,data_flows_ref,i_year = i,i_link = 5,linkname='DK-W -> DE-N',savelabel='DKW2DEN_ref_mod',legendlabels=['Modified layout','2011 layout'])
+#
+# DK-W -> DK-E
+# plot_compare_flow_statistics(year,data_flows,data_flows_ref,i_year = i,i_link = 4,linkname='DK-W -> DK-E',savelabel='DKW2DKE_ref_mod',legendlabels=['Modified layout','2011 layout'])
+#
+# NO -> DK-W
+# plot_compare_flow_statistics(year,data_flows,data_flows_ref,i_year = i,i_link = 1,linkname='NO -> DK-W',savelabel='NO2DKW_ref_mod',legendlabels=['Modified layout','2011 layout'])
+#
+# SE -> DK-W
+# plot_compare_flow_statistics(year,data_flows,data_flows_ref,i_year = i,i_link = 2,linkname='SE -> DK-W',savelabel='SE2DKW_ref_mod',legendlabels=['Modified layout','2011 layout'])
+#
+#
+def plot_compare_flow_statistics(year,data_flows_1,data_flows_2,i_year = 15,i_link = 5,legendlabels=['1','2'],linkname='DK-W -> DE-N',savelabel='test',N_bins=21,ymax=510,xmin=-1010,xmax=1610):
+      
+    flows_1 = data_flows_1[i_year]
+    flows_2 = data_flows_2[i_year]
+    
+    flows = array([flows_1[i_link],flows_2[i_link]]).transpose()
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+    
+    #bins = linspace(1.01*amin(flows),1.01*amax(flows),N_bins)
+    bins = linspace(xmin,xmax,N_bins)
+    weights = 365*24*ones(flows.shape)/len(flows_1[i_link])#/abs(bins[0]-bins[1])
+    h_data, bins, patch = hist(flows,bins,weights=weights,normed=False,label=legendlabels)
+    
+    if ymax==None:
+        ymax = 1.5*amax(h_data[0][amin(find(bins>=abs(bins[0]-bins[1])))])
+    axis(xmin=xmin,xmax=xmax,ymin=0, ymax=ymax)
+    # axis(xmin=1.1*amin(flows_1[i_link]),xmax=1.1*amax(flows_1[i_link]),ymin=0, ymax=1.1*amax(h_data[0][find(abs(bins[1:])>=2*abs(bins[0]-bins[1]))]))
+
+    xlabel('Power [MW]')
+    ylabel('Frequency [hours/yr]')
+    
+    leg = legend(title='{0:0.0f}:'.format(year[i_year]) + '\n' + linkname)
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+
+    tight_layout()
+    save_figure('plot_compare_flow_statistics_'+'{0:0.0f}_'.format(year[i_year])+savelabel+'.pdf')
       
 ### Local utilities
 def get_basepath_gamma(year,filename='basepath_gamma.npy'):

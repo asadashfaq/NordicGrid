@@ -550,9 +550,106 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     save_file_name = 'plot_value_of_storage_2_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
+def get_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cycles=100, gain=0.90, alpha_w=None, eta_charge=1., eta_discharge=1.):
+
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    
+    ## Baseline, no storage
+    if alpha_w=='season':
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=NaN, returnall=True)
+    elif alpha_w==None:
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
+    else:
+        res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
+        alpha_w_path = alpha_w*ones_like(gamma) 
+    
+    fitfunc_N_cycles = lambda gamma, alpha_w, CS, acc: get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, acc,eta_charge=eta_charge,eta_discharge=eta_discharge,returnall=True)[-1]*365*24
+    
+    CS_fit, P_in, P_out = zeros_like(gamma), zeros_like(gamma), zeros_like(gamma)
+    for i in arange(len(gamma)):
+        if gain*fitfunc_N_cycles(gamma[i],alpha_w_path[i],1e-6,acc=0)-N_cycles>0:
+            CS_fit[i] = brentq(lambda CS: gain*fitfunc_N_cycles(gamma[i],alpha_w_path[i],CS,acc=0)-N_cycles, 1e-6, 365*24)
+        else:
+            CS_fit[i] = 1e-6 #Could be changed such that N_cycles was reduced to the maximum number of cycles at CS=1e-6.
+    
+    #print fitfunc_N_cycles(gamma[i],alpha_w,CS_fit,1-gain)
+    
+        Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma[i], alpha_w_path[i], CS_fit[i], 1-gain, eta_charge=eta_charge,eta_discharge=eta_discharge)
+    
+        P_in[i] = mean(P_in_)
+        P_out[i] = mean(P_out_)
+    
+        print ' '
+        print gamma[i], alpha_w_path[i], CS_fit[i], P_in[i], P_out[i]
+    
+    return CS_fit, P_in, P_out
+    
+def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cycles=[100,200,100], gain=0.90, alpha_w=[None,None,1], eta_charge=1., eta_discharge=1., txtlabel='', savelabel=''):
+
+    N_cycles = array(N_cycles,ndmin=1)
+    alpha_w = array(alpha_w,ndmin=1)
+    
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    CS_fit_, P_in_, P_out_ = [], [], []
+    for i in arange(len(N_cycles)):
+        CS_fit, P_in, P_out = get_storage_buildup_fixed_cycle_number(ISO, gamma, N_cycles[i], gain, alpha_w[i], eta_charge, eta_discharge)
+        
+        CS_fit_.append(CS_fit)
+        P_in_.append(P_in)
+        P_out_.append(P_out)
+    
+    CS_fit_, P_in_, P_out_ = array(CS_fit_), array(P_in_), array(P_out_)
+    print CS_fit_, P_in_, P_out_
+    print CS_fit_[0], P_in_[0], P_out_[0]
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
     
     
+    ## Plot storage energy capacity build-up
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    for i in arange(len(N_cycles)):
+        plot(gamma*mean(L)*365*24/1e3,mean(L)*CS_fit_[i],label=N_cycles[i])
+
+    xlabel('Wind plus solar energy [TWh/yr]')
+    ylabel('Storage volume [GWh]')
+
+    #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
+    #ltext  = leg.get_texts();
+    #setp(ltext, fontsize='small')    # the legend text fontsize
+
+    axis(xmin=0,xmax=amax(gamma)*mean(L)*365*24/1e3,ymin=0,ymax=14*mean(L))
+
+    tight_layout()
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_EnergyCap_'+savelabel+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
+
     
+    ## Plot charging and discharging capacities
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    for i in arange(len(N_cycles)):
+        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_in_[i],ls='-',label=N_cycles[i])
+        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_out_[i],ls='--',label=N_cycles[i])
+
+    xlabel('Wind plus solar energy [TWh/yr]')
+    ylabel('Power [MW]')
+
+    axis(xmin=0,xmax=amax(gamma)*mean(L)*365*24/1e3,ymin=0,ymax=2050)
+
+    #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
+    #ltext  = leg.get_texts();
+    #setp(ltext, fontsize='small')    # the legend text fontsize
+
+    tight_layout()
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_PowerCap_'+savelabel+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
     
     
 def plot_value_of_storage_alt(ISO='DK', gamma=[.25,.50,.75,1.00], CS=[1,15,30,60], alpha_w=None):
@@ -786,7 +883,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
 # plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind_storage',CS=7.4)
 # plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal_storage',CS=7.4)
 
-def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('1-1-2000'), N_days=30, monday_offset=5, titletxt='Denmark, Jan. 2000', label='TestFigure'):
+def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_in = 1., eta_out = 1.):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -800,8 +897,16 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     solar = gamma*(1-alpha_w)*Gs*mean(L)
     mismatch = (wind+solar) - L
     
+    if gain_storage!=None:
+            Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, 1-gain_storage,eta_charge=eta_in,eta_discharge=eta_out)
+            P_in, P_out = P_in_[0][0], P_out_[0][0]
+            print P_in, P_out
+    
     if CS!=None or CS==0:
-        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        
+        mismatch_r = get_policy_2_storage_modified(mismatch, eta_in = eta_in, eta_out = eta_out, CS = CS, P_in=P_in, P_out=P_out)[0]
+        #mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        
     else:
         mismatch_r = mismatch
     
@@ -1188,6 +1293,7 @@ def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01
     gamma = array(gamma,ndmin=1)
     
     if returnall==True:
+        
         alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, GW, GS, gamma[0], p_interval, CS, returnall, normalized)
         alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = expand2array(alpha_w_opt,gamma), expand2array(alpha_w_opt_1p_interval,gamma), expand2array(res_load_sum_opt,gamma), expand2array(mismatch_opt,gamma), expand2array(res_load_sum_1p,gamma)
         
@@ -1208,9 +1314,9 @@ def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, ret
 
     if returnall:
         ## The returned value of CS is ommitted for compatability reasons.
-        return get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True)[:-1]
+        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind)[:-1]
     else:
-        return get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True)
+        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind)
 
 def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True):
 
@@ -1334,9 +1440,31 @@ def get_min_storage_cap(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-4):
     return Res_load_sum, P_in_, P_out_
 
 
+def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=None, P_out=None):
+    """ This function behaves like Morten's get_policy_2_storage(). However, it allows limiting the charging and discharging capacities of the storage. """
+    
+    if P_in==None:
+        ## No constraints on charging
+        P_in = amax(mismatch)
+    if P_out==None:
+        ## No constraints on discharging
+        P_out = -amin(mismatch)
+        
+    ## The mismatch is cut by the maximum charging and discharging capacities.
+    mismatch_ = lambda P_in, P_out: amax([amin([mismatch,P_in*ones_like(mismatch)],axis=0),-P_out*ones_like(mismatch)],axis=0) 
+    
+    ## The cut mismatch is feed into Mortens code to produce the cut reduced mismatch.     
+    mismatch_r_, CS_used = get_policy_2_storage(mismatch_(P_in,P_out),eta_in,eta_out,CS)   
+        
+    ## Calculate the real reduced mismatch.
+    mismatch_r = mismatch_r_ + (mismatch - mismatch_(P_in,P_out))
+        
+    ## REturns the reduced mismatch and the storage energy capacity that whas actually used (0<=CS_used<=CS).
+    return mismatch_r, CS_used
+
 #
 # get_min_storage_cap_alt(L, Gw, Gs, gamma=1, alpha_w=1., CS=6)
-#
+# Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-2,returnall=False,eta_charge=1.,eta_discharge=1.):
 def get_min_storage_cap_alt(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-2,returnall=False,eta_charge=1.,eta_discharge=1.):
     """Finds upper and lower limits of the storage in and output capacities. acc sets the relative increase in balancing energy that is acceptable.
     WARNING! This function is slow to evaluate."""
@@ -1376,7 +1504,11 @@ def get_min_storage_cap_alt(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-2,re
         print i,
         sys.stdout.flush()    
 
-        if Storage_benefit[i] - storage_benefit(alpha_w[i], gamma[i], 1e-8, 1e3) > acc*Storage_benefit[i]:
+        if acc==0:  #Intended for quick calculation where the charging and discharging powers are not relevant.
+            P_in_[i] = [NaN,NaN]
+            P_out_[i] = [NaN,NaN]
+        #elif Storage_benefit[i] - storage_benefit(alpha_w[i], gamma[i], 1e-8, 1e3) > acc*Storage_benefit[i]:
+        elif ((1-acc)*Storage_benefit[i] - storage_benefit(alpha_w[i], gamma[i], 1e-8, 10) > 0)*((1-acc)*Storage_benefit[i] - storage_benefit(alpha_w[i], gamma[i], 10, 1e-8) > 0):
 
             P_in_0 = brentq(lambda P_in: (1-acc/2.)*Storage_benefit[i] - storage_benefit(alpha_w[i], gamma[i], P_in, 1e3), 1e-8, 10)
             P_out_0 = brentq(lambda P_out: (1-acc)*Storage_benefit[i] - storage_benefit(alpha_w[i], gamma[i], P_in_0, P_out), 1e-8, 10)

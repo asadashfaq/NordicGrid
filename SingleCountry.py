@@ -306,8 +306,8 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     pp = list(pp)
 
     ## Guide lines
-    plot(.2*array([0.,mean(L)*365*24/1e3]),.2*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
-    text(.05*mean(L)*365*24/1e3,.2*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'20%',weight='semibold',fontsize=10)
+    plot(.25*array([0.,mean(L)*365*24/1e3]),.25*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
+    text(.05*mean(L)*365*24/1e3,.25*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'25%',weight='semibold',fontsize=10)
     
     plot(.5*array([0.,mean(L)*365*24/1e3]),.5*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
     text(.05*mean(L)*365*24/1e3,.5*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'50%',weight='semibold',fontsize=10)
@@ -323,8 +323,8 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
     axis(xmin=0,xmax=mean(L)*365*24/1e3*amax(gamma),ymin=0,ymax=mean(L)*365*24/1e3*amax(gamma))
     axis('scaled')
-    xlabel(r'Wind energy per year [TWh]')
-    ylabel(r'Solar energy per year [TWh]')
+    xlabel(r'Wind energy per year [TWh/yr]')
+    ylabel(r'Solar energy per year [TWh/yr]')
     
     ax=gca()
     ax.spines['top'].set_color('none')
@@ -344,6 +344,32 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     save_file_name = 'plot_country_optimal_mix_vs_gamma_triangle_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
+    #####
+    # Constant gamma crosssections
+    #####
+
+    close(1); figure(1); clf()
+
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+    
+    gamma_cross_section = array([0.25,0.5,1.0])
+    alpha_w_cross_section = linspace(0,1,21)
+    
+    for i in arange(len(gamma_cross_section)):
+        total_surplus = mean(L)*365*24/1e3*(get_balancing(L, Gw, Gs, gamma_cross_section[i], CS=CS, alpha=alpha_w_cross_section).transpose()[0]/len(L) - (1. - amin([gamma_cross_section[i],1])))
+        
+        plot(alpha_w_cross_section, total_surplus,'k-',lw=1.5)
+        
+        text(.15,interp(.15,alpha_w_cross_section,total_surplus)+.5,r'{0:0.0f}%'.format(gamma_cross_section[i]*100),weight='semibold',fontsize=10)
+    
+    xlabel('Wind share of total VRE energy')
+    ylabel('Total wind and solar surplus [TWh/yr]')
+    axis(xmin=0,xmax=1,ymin=0)
+    
+    tight_layout()
+    save_file_name = 'plot_country_optimal_mix_vs_gamma_cross_sections_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
 
     #####
     # Decrease in average balancing vs gamma

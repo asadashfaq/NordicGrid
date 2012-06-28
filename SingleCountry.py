@@ -15,7 +15,7 @@ import sys
 #Custom functions
 from shortcuts import *
 from Database_v1 import get_data_countries, get_data_regions
-from MortenStorage import get_policy_2_storage
+from MortenStorage import get_policy_2_storage, get_storage
 
 #Specific functions, not sure if all are actually used
 from scipy.optimize import brentq
@@ -718,7 +718,7 @@ def plot_value_of_storage_alt(ISO='DK', gamma=[.25,.50,.75,1.00], CS=[1,15,30,60
     save_figure(save_file_name)    
     
 
-def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=None):
+def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=None,N_gamma=111,returnall=True):
 
     surplus_bar = zeros(gamma_bar.shape)
     for i in arange(len(gamma_bar)):
@@ -726,7 +726,7 @@ def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=Non
 
         surplus_bar[i] = mean(curtailment)*365*24/1e3
 
-    gamma = linspace(amin(gamma_bar)-.1,amax(gamma_bar)+.1,111)
+    gamma = linspace(amin(gamma_bar)-.1,amax(gamma_bar)+.1,N_gamma)
     surplus = zeros(gamma.shape)
     for i in arange(len(gamma)):
         L, wind_local, solar_local, curtailment, filling, extraction = get_compare_VRES_load(ISO, gamma[i], alpha_w, CS)
@@ -773,6 +773,45 @@ def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=Non
 
     tight_layout()
     save_file_name = 'plot_surplus_bar_'+ISO+'_CS_'+str(CS)+'.pdf'
+    save_figure(save_file_name)
+    
+    if returnall:
+        return gamma, surplus, gamma_bar, surplus_bar
+
+def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None],CS=None,N_gamma=51,bw = 5,color_bar=['r','b']):
+
+
+    gamma_, surplus_, gamma_bar_, surplus_bar_ = zeros((len(alpha_w),N_gamma)), zeros((len(alpha_w),N_gamma)), zeros((len(alpha_w),len(gamma_bar))), zeros((len(alpha_w),len(gamma_bar)))
+    for i in arange(len(alpha_w)):
+    
+        gamma_[i], surplus_[i], gamma_bar_[i], surplus_bar_[i] = plot_surplus_bar(ISO,gamma_bar,alpha_w[i],CS,N_gamma,returnall=True)
+    
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    for i in arange(len(alpha_w)):
+
+        plot(gamma_[i]*100,surplus_[i],'k-',lw=1.5,zorder=0)
+        bars = bar(gamma_bar_[i]*100 + bw/len(alpha_w)*(i-.5*len(alpha_w)+.5),surplus_bar_[i],align='center',width=bw/len(alpha_w),color=color_bar[i])
+
+    axis(xmin=amin(gamma_bar*100)-10,xmax=amax(gamma_bar*100)+10,ymin=0,ymax=1.05*amax(surplus_bar_))
+    xticks(gamma_bar*100,['{0:.0f}%'.format(x) for x in gamma_bar*100],va='top')
+    xlabel(r'Target VRE gross share [%]')
+    ylabel('Total surplus [TWh]')
+
+    ax=gca()
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
+    tight_layout()
+    save_file_name = 'plot_surplus_bar_comp_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
 def autolabel_bars(rects,ax,heighttxt=r'{0:0.1f}',scale_factors=1):

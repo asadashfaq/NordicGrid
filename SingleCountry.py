@@ -32,6 +32,9 @@ color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)
 color_edge = (.4,.4,.4)
 
+## Standard figure size:
+figure_size = [6.5,4.3]
+
 def plot_storage_balancing_synergy(ISO='DK', gamma=[.5,.75,1.,1.25,1.5], CS=linspace(0,24,5)):
 
     #Load data
@@ -948,7 +951,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
 # plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind_storage',CS=7.4)
 # plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal_storage',CS=7.4)
 
-def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_in = 1., eta_out = 1.):
+def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_in = 1., eta_out = 1., fancy_storage=False):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -962,14 +965,14 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     solar = gamma*(1-alpha_w)*Gs*mean(L)
     mismatch = (wind+solar) - L
     
-    if gain_storage!=None:
-            Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, 1-gain_storage,eta_charge=eta_in,eta_discharge=eta_out)
-            P_in, P_out = P_in_[0][0], P_out_[0][0]
-            print P_in, P_out
-    
     if CS!=None or CS==0:
         
-        mismatch_r = get_policy_2_storage_modified(mismatch, eta_in = eta_in, eta_out = eta_out, CS = CS, P_in=P_in, P_out=P_out)[0]
+        if gain_storage!=None:
+            Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, 1-gain_storage,eta_charge=eta_in,eta_discharge=eta_out)
+            P_in, P_out = P_in_[0][0], P_out_[0][0]
+            print Storage_benefit, P_in, P_out
+        
+        mismatch_r = get_policy_2_storage_modified(mismatch/mean(L), eta_in = eta_in, eta_out = eta_out, CS = CS, P_in=P_in, P_out=P_out,fancy_storage=fancy_storage)[0]*mean(L)
         #mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
         
     else:
@@ -981,6 +984,9 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
 
     wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
     solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
+
+    print 'sum(curtailment), sum(filling), sum(extraction), sum(wind_local), sum(solar_local)'
+    print sum(curtailment), sum(filling), sum(extraction), sum(wind_local), sum(solar_local)
 
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10
@@ -1505,7 +1511,7 @@ def get_min_storage_cap(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-4):
     return Res_load_sum, P_in_, P_out_
 
 
-def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=None, P_out=None):
+def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=None, P_out=None, fancy_storage=False):
     """ This function behaves like Morten's get_policy_2_storage(). However, it allows limiting the charging and discharging capacities of the storage. """
     
     if P_in==None:
@@ -1519,7 +1525,10 @@ def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=
     mismatch_ = lambda P_in, P_out: amax([amin([mismatch,P_in*ones_like(mismatch)],axis=0),-P_out*ones_like(mismatch)],axis=0) 
     
     ## The cut mismatch is feed into Mortens code to produce the cut reduced mismatch.     
-    mismatch_r_, CS_used = get_policy_2_storage(mismatch_(P_in,P_out),eta_in,eta_out,CS)   
+    if fancy_storage:
+        mismatch_r_, CS_used = get_storage(mismatch_(P_in,P_out),eta_in,eta_out,CS)   
+    else:
+        mismatch_r_, CS_used = get_policy_2_storage(mismatch_(P_in,P_out),eta_in,eta_out,CS)   
         
     ## Calculate the real reduced mismatch.
     mismatch_r = mismatch_r_ + (mismatch - mismatch_(P_in,P_out))
@@ -1844,11 +1853,14 @@ def get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.1,1.,10,30,
         #print E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w, CS
         #print ' '
         
-def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.99):   
-    """CS=NaN gives results for seasonal storage at the relevant mix. alpha_w=None is balancing optimal mix, alpha_w=NaN is seasonal optimal mix."""
+def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.99,country_data=None):   
+    """CS=NaN gives results for seasonal storage at the relevant mix. alpha_w=None is balancing optimal mix, alpha_w=NaN is seasonal optimal mix. country_data=(t, L, Gw, Gs, datetime_offset, datalabel)"""
     
     ## Load data
-    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    if country_data==None:
+        t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    else:
+        t, L, Gw, Gs, datetime_offset, datalabel = country_data
     
     ## Find mix if it is not specified directly as a fraction.
     if alpha_w==None:
@@ -1863,7 +1875,7 @@ def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.
         alpha_w, alpha_w_1p_interval, res_load_sum, mismatch, res_load_sum_1p, CS_pp = get_optimal_mix(L, Gw, Gs, gamma, CS=NaN, returnall=True)
     
     if isnan(CS):
-            CS = get_policy_2_storage(gamma*(alpha_w[0]*Gw + (1.-alpha_w[0])*Gs) - L/mean(L))[1]
+        CS = get_policy_2_storage(gamma*(alpha_w*Gw + (1.-alpha_w)*Gs) - L/mean(L))[1]
     
     ## Calculate optimal storage dynamics
     Storage_benefit, P_charge, P_discharge, E_surplus, E_residual, E_discharge, E_charge, N_cycles = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, 1.-storage_gain,returnall=True)
@@ -1871,6 +1883,88 @@ def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.
     ## Average hourly values are returned.
     return E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w, CS
         
+def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,2,5), alpha_w=[1,None,nan],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
+    """alpha_w: None=balancing optimal mix, NaN=Seasonal optimal mix"""
+    
+    ## Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    annual_TWh = mean(L)*365*24/1e3
+
+    CS = zeros((len(alpha_w),len(gamma)))
+    
+    for i in arange(len(alpha_w)):
+        for j in arange(len(gamma)):
+            E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w_, CS[i][j] = get_storage_summary(ISO, gamma[j], alpha_w[i], CS=nan, storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))
+
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10    
+      
+    ### Plot storage singularity                      
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches(figure_size) 
+      
+    for i in arange(len(alpha_w)):
+        plot(gamma*annual_TWh,CS[i]*mean(L),ls=ls[i],color=line_color[i],label=textlabel[i],lw=1.5)  
+    
+    dx = 0.02*annual_TWh
+    plot_vertical_line_and_label(0.5*annual_TWh,1000,r'50%',dx)
+    plot_vertical_line_and_label(1*annual_TWh,1000,r'100%',dx)
+    plot_vertical_line_and_label(1.5*annual_TWh,1000,r'150%',dx)
+    
+    xlabel('Wind plus solar energy [TWh/yr]')
+    ylabel('Min. seasonal storage volume [GWh]')
+      
+    legend()  
+      
+    tight_layout()
+    save_file_name = 'plot_seasonal_storage_singularity'+'_'+ISO+'.pdf'
+    save_figure(save_file_name)  
+
+def plot_storage_balancing_synergy(ISO='DK',CS=linspace(0,24,5),gamma=1.0, alpha_w=[1,None,NaN],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
+
+    ## Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    annual_TWh = mean(L)*365*24/1e3
+
+    E_residual, E_discharge = zeros((len(alpha_w),len(CS))), zeros((len(alpha_w),len(CS)))
+
+    for i in arange(len(alpha_w)):
+        for j in arange(len(CS)):
+            E_surplus, E_residual[i][j], N_cycles, E_charge, E_discharge[i][j], P_charge, P_discharge, alpha_w_, CS_ = get_storage_summary(ISO, gamma, alpha_w[i], CS=CS[j], storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10    
+      
+    ### Plot storage singularity                      
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches(figure_size) 
+    
+    for i in arange(len(alpha_w)):
+        plot(CS,(E_residual-E_discharge)[i],ls=ls[i],color=line_color[i],label=textlabel[i],lw=1.5)
+   
+    xlabel('Storage size [av.l.h.]')
+    ylabel('Balancing power [av.l.h.]')
+      
+    axis(xmin=0,xmax=amax(CS),ymin=0)
+      
+    tight_layout()
+    save_file_name = 'plot_storage_balancing_synergy'+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
+    
+    
+
+def plot_vertical_line_and_label(x,y,textlabel=None,dx=None,ls='--',color='k',lw=1):
+
+    if dx==None:
+        dx=0.05*x
+
+    axvline(x,ls=ls,color=color,lw=lw)
+    text(x-dx,y,textlabel,weight='semibold',fontsize=10,ha='right')
+    
+    
+    
       
 ######
 # Convinient access to ISET country data.

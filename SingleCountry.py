@@ -31,11 +31,12 @@ color_wind = (0.5,0.7,1.)
 color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)
 color_edge = (.4,.4,.4)
+color_opt = (0.53,0.73,0.37)
 
 ## Standard figure size:
 figure_size = [6.5,4.3]
 
-def plot_storage_balancing_synergy(ISO='DK', gamma=[.5,.75,1.,1.25,1.5], CS=linspace(0,24,5)):
+def plot_storage_balancing_synergy_old(ISO='DK', gamma=[.75,1.,1.25], CS=linspace(0,24,5)):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -612,13 +613,18 @@ def get_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cy
         print gamma[i], alpha_w_path[i], CS_fit[i], P_in[i], P_out[i]
     
     return CS_fit, P_in, P_out
-    
-def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cycles=[100,200,100], gain=0.90, alpha_w=[None,None,1], eta_charge=1., eta_discharge=1., txtlabel='', savelabel=''):
+
+##
+# plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,21))
+#    
+def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), N_cycles=[50,100,200,50,100], gain=0.90, alpha_w=[None,None,None,1,1], eta_charge=1., eta_discharge=1., txtlabel='', savelabel=''):
 
     N_cycles = array(N_cycles,ndmin=1)
     alpha_w = array(alpha_w,ndmin=1)
     
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    annual_TWh = mean(L)*365*24/1e3
 
     CS_fit_, P_in_, P_out_ = [], [], []
     for i in arange(len(N_cycles)):
@@ -642,7 +648,31 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_c
     gcf().set_size_inches([6.5,4.3])
 
     for i in arange(len(N_cycles)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*CS_fit_[i],label=N_cycles[i])
+        
+        ## Pick color
+        if alpha_w[i]==None:
+            color = 'k'
+        elif alpha_w[i]==1:
+            color = color_wind
+        else:
+            color = 'g'
+            
+        ## Pick line style
+        if N_cycles[i]==50:
+            ls = '-'
+        elif N_cycles[i]==100:
+            ls = '--'
+        else:
+            ls = '-.'
+        
+        plot(gamma*annual_TWh,mean(L)*CS_fit_[i],color=color,ls=ls,label='{0:.0f}'.format(N_cycles[i]))
+
+    
+    dx = 0.02*annual_TWh
+    plot_vertical_line_and_label(0.25*annual_TWh,10,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,10,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,10,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,10,r'100%',dx)
 
     xlabel('Wind plus solar energy [TWh/yr]')
     ylabel('Storage volume [GWh]')
@@ -652,6 +682,8 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_c
     #setp(ltext, fontsize='small')    # the legend text fontsize
 
     axis(xmin=0,xmax=amax(gamma)*mean(L)*365*24/1e3,ymin=0,ymax=14*mean(L))
+
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]')
 
     tight_layout()
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_EnergyCap_'+savelabel+'_'+ISO+'.pdf'
@@ -664,13 +696,19 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_c
     gcf().set_size_inches([6.5,4.3])
 
     for i in arange(len(N_cycles)):
-        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_in_[i],ls='-',label=N_cycles[i])
-        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_out_[i],ls='--',label=N_cycles[i])
+        plot(gamma*annual_TWh,1e3*mean(L)*P_in_[i],ls='-',label=N_cycles[i])
+        plot(gamma*annual_TWh,1e3*mean(L)*P_out_[i],ls='--',label=N_cycles[i])
 
     xlabel('Wind plus solar energy [TWh/yr]')
     ylabel('Power [MW]')
 
-    axis(xmin=0,xmax=amax(gamma)*mean(L)*365*24/1e3,ymin=0,ymax=2050)
+    dx = 0.02*annual_TWh
+    plot_vertical_line_and_label(0.25*annual_TWh,1000,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,1000,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,1000,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,1000,r'100%',dx)
+
+    axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=2050)
 
     #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
     #ltext  = leg.get_texts();
@@ -678,6 +716,30 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_c
 
     tight_layout()
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_PowerCap_'+savelabel+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
+    
+    ## Plot charging and discharging capacities Vs energy capacity
+    close(1); figure(1); clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([6.5,4.3])
+
+    for i in arange(len(N_cycles)):
+        plot(mean(L)*CS_fit_[i],1e3*mean(L)*P_in_[i],ls='-',label=N_cycles[i])
+        plot(mean(L)*CS_fit_[i],1e3*mean(L)*P_out_[i],ls='--',label=N_cycles[i])
+
+    plot(mean(L)*CS_fit_[i],mean(L)*CS_fit_[i]*1e3,'k:')
+
+    xlabel('Storage volume [GWh]')
+    ylabel('Power [MW]')
+
+    axis(xmin=0,ymin=0)
+
+    #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
+    #ltext  = leg.get_texts();
+    #setp(ltext, fontsize='small')    # the legend text fontsize
+
+    tight_layout()
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_PowerCapVsEnergyCap_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
     
@@ -781,13 +843,19 @@ def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=Non
     if returnall:
         return gamma, surplus, gamma_bar, surplus_bar
 
-def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None],CS=None,N_gamma=51,bw = 5,color_bar=['r','b']):
+def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Pure wind','Balancing optimal mix','Pure wind, 50 GWh storage','Balancing optimal mix, 50 GWh storage']):
 
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    annual_TWh = mean(L)*365*24/1e3
 
     gamma_, surplus_, gamma_bar_, surplus_bar_ = zeros((len(alpha_w),N_gamma)), zeros((len(alpha_w),N_gamma)), zeros((len(alpha_w),len(gamma_bar))), zeros((len(alpha_w),len(gamma_bar)))
     for i in arange(len(alpha_w)):
     
-        gamma_[i], surplus_[i], gamma_bar_[i], surplus_bar_[i] = plot_surplus_bar(ISO,gamma_bar,alpha_w[i],CS,N_gamma,returnall=True)
+        gamma_[i], surplus_[i], gamma_bar_[i], surplus_bar_[i] = plot_surplus_bar(ISO,gamma_bar,alpha_w[i],CS[i],N_gamma,returnall=True)
+    
+        print diff(surplus_[i])/((gamma_[i][1]-gamma_[i][0])*annual_TWh)
     
     
     #Set plot options	
@@ -797,15 +865,29 @@ def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,
     gcf().set_dpi(300)
     gcf().set_size_inches([6.5,4.3])
 
+    fill_between(gamma_[i]*annual_TWh,amax(surplus_,axis=0),amin(surplus_,axis=0),color=(.7,.7,.7))
+
+    plot_vertical_line_and_label(.25*annual_TWh,interp(25,gamma_[0]*100,amax(surplus_,axis=0))+.5,textlabel=r'25%',dx=.5,ls='--',color='k',lw=1)
+    plot_vertical_line_and_label(.50*annual_TWh,interp(50,gamma_[0]*100,amax(surplus_,axis=0))+.5,textlabel=r'50%',dx=.5,ls='--',color='k',lw=1)
+    plot_vertical_line_and_label(.75*annual_TWh,interp(75,gamma_[0]*100,amax(surplus_,axis=0))+.5,textlabel=r'75%',dx=.5,ls='--',color='k',lw=1)
+    plot_vertical_line_and_label(1.00*annual_TWh,interp(100,gamma_[0]*100,amax(surplus_,axis=0))+.5,textlabel=r'100%',dx=.5,ls='--',color='k',lw=1)
+
     for i in arange(len(alpha_w)):
 
-        plot(gamma_[i]*100,surplus_[i],'k-',lw=1.5,zorder=0)
-        bars = bar(gamma_bar_[i]*100 + bw/len(alpha_w)*(i-.5*len(alpha_w)+.5),surplus_bar_[i],align='center',width=bw/len(alpha_w),color=color_bar[i])
+        #plot(gamma_[i]*100,surplus_[i],'k-',lw=1.5,zorder=0)
+        
+        if hatch_bar[i]:
+            bars = bar(annual_TWh*(gamma_bar_[i] + 1.20*bw/len(alpha_w)*(i-.5*len(alpha_w)+.5)+0.1*bw/len(alpha_w)),surplus_bar_[i],align='center',width=bw*annual_TWh/len(alpha_w),color='k', fc=color_bar[i], hatch="/",label=textlabels[i])
+        else:
+            bars = bar(annual_TWh*(gamma_bar_[i] + 1.20*bw/len(alpha_w)*(i-.5*len(alpha_w)+.5)+0.1*bw/len(alpha_w)),surplus_bar_[i],align='center',width=bw*annual_TWh/len(alpha_w),color=color_bar[i],label=textlabels[i])
 
-    axis(xmin=amin(gamma_bar*100)-10,xmax=amax(gamma_bar*100)+10,ymin=0,ymax=1.05*amax(surplus_bar_))
-    xticks(gamma_bar*100,['{0:.0f}%'.format(x) for x in gamma_bar*100],va='top')
-    xlabel(r'Target VRE gross share [%]')
-    ylabel('Total surplus [TWh]')
+    
+
+    axis(xmin=0,xmax=amax(gamma_bar*annual_TWh)+.10*annual_TWh,ymin=0,ymax=1.0*amax(surplus_bar_)+1)
+    #xticks(gamma_bar*100,['{0:.0f}%'.format(x) for x in gamma_bar*100],va='top')
+    xticks(concatenate([[0],gamma_bar])*annual_TWh,['{0:.1f}'.format(x) for x in concatenate([[0],gamma_bar])*annual_TWh],va='top')
+    xlabel(r'Wind plus solar energy [TWh/yr]')
+    ylabel('Total surplus [TWh/yr]')
 
     ax=gca()
     ax.spines['top'].set_color('none')
@@ -813,6 +895,10 @@ def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
+    leg = legend(loc='upper left')
+    ltext  = leg.get_texts();
+    setp(ltext, fontsize='small')    # the legend text fontsize
+    
     tight_layout()
     save_file_name = 'plot_surplus_bar_comp_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
@@ -1832,7 +1918,7 @@ def get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.1,1.,10,30,
     """ All numbers are per year. CS=NaN gives results for seasonal storage at the relevant mix. alpha_w=None is balancing optimal mix, alpha_w=NaN is seasonal optimal mix."""
     
     ## Load data
-    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)    
     
     gamma_,CS_ = meshgrid(gamma,CS)
     
@@ -1882,8 +1968,13 @@ def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.
     
     ## Average hourly values are returned.
     return E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w, CS
-        
-def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,2,5), alpha_w=[1,None,nan],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
+
+##
+#
+# plot_seasonal_storage_singularity(gamma=linspace(0,1.25,51),alpha_w=[1,None])
+#
+#        
+def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,1.25,5), alpha_w=[1,None,nan],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
     """alpha_w: None=balancing optimal mix, NaN=Seasonal optimal mix"""
     
     ## Load data
@@ -1908,30 +1999,42 @@ def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,2,5), alpha_w=[
         plot(gamma*annual_TWh,CS[i]*mean(L),ls=ls[i],color=line_color[i],label=textlabel[i],lw=1.5)  
     
     dx = 0.02*annual_TWh
+    plot_vertical_line_and_label(0.25*annual_TWh,1000,r'25%',dx)
     plot_vertical_line_and_label(0.5*annual_TWh,1000,r'50%',dx)
-    plot_vertical_line_and_label(1*annual_TWh,1000,r'100%',dx)
-    plot_vertical_line_and_label(1.5*annual_TWh,1000,r'150%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,1000,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,1000,r'100%',dx)
     
     xlabel('Wind plus solar energy [TWh/yr]')
     ylabel('Min. seasonal storage volume [GWh]')
       
-    legend()  
+    legend(loc='Upper left')  
+      
+    axis(xmin=0,xmax=amax(gamma*annual_TWh),ymin=0)  
       
     tight_layout()
     save_file_name = 'plot_seasonal_storage_singularity'+'_'+ISO+'.pdf'
     save_figure(save_file_name)  
 
-def plot_storage_balancing_synergy(ISO='DK',CS=linspace(0,24,5),gamma=1.0, alpha_w=[1,None,NaN],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
+##
+# plot_storage_balancing_synergy(CS=linspace(0,13,51))
+#
+def plot_storage_balancing_synergy(ISO='DK',CS=linspace(0,13,5),gamma=[.5,.75,1.], alpha_w=[1,None],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix']):
 
     ## Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
-    annual_TWh = mean(L)*365*24/1e3
+    annual_GWh = mean(L)*365*24
 
-    E_residual, E_discharge = zeros((len(alpha_w),len(CS))), zeros((len(alpha_w),len(CS)))
+    E_residual, E_discharge = zeros((len(gamma),len(alpha_w),len(CS))), zeros((len(gamma),len(alpha_w),len(CS)))
+    E_seasonal_storage = zeros((len(gamma),len(alpha_w)))
+    
+    for k in arange(len(gamma)):
+        for i in arange(len(alpha_w)):
+            E_seasonal_storage[k][i] = get_storage_summary(ISO, gamma[k], alpha_w[i], CS=NaN, storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))[4]
+            
+            for j in arange(len(CS)):
+                E_surplus, E_residual[k][i][j], N_cycles, E_charge, E_discharge[k][i][j], P_charge, P_discharge, alpha_w_, CS_ = get_storage_summary(ISO, gamma[k], alpha_w[i], CS=CS[j], storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))
 
-    for i in arange(len(alpha_w)):
-        for j in arange(len(CS)):
-            E_surplus, E_residual[i][j], N_cycles, E_charge, E_discharge[i][j], P_charge, P_discharge, alpha_w_, CS_ = get_storage_summary(ISO, gamma, alpha_w[i], CS=CS[j], storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))
+                
     
     #Set plot options	
     matplotlib.rcParams['font.size'] = 10    
@@ -1941,26 +2044,50 @@ def plot_storage_balancing_synergy(ISO='DK',CS=linspace(0,24,5),gamma=1.0, alpha
     gcf().set_dpi(300)
     gcf().set_size_inches(figure_size) 
     
-    for i in arange(len(alpha_w)):
-        plot(CS,(E_residual-E_discharge)[i],ls=ls[i],color=line_color[i],label=textlabel[i],lw=1.5)
+    for k in arange(len(gamma)):
+        for i in arange(len(alpha_w)):
+            
+            ## Pick color
+            if alpha_w[i]==None:
+                color = 'k'
+            elif alpha_w[i]==1:
+                color = color_wind
+            else:
+                color = 'g'
+                
+            ## Pick line style
+            if gamma[k]==.5:
+                ls = '-'
+            elif gamma[k]==.75:
+                ls = '--'
+            else:
+                ls = '-.'
+            
+            textlabel = r'{0:0.0f}%'.format(100*gamma[k])
+            
+            plot(CS*mean(L),100*E_discharge[k][i]/E_seasonal_storage[k][i],ls=ls,color=color,label=textlabel,lw=1.5)
    
-    xlabel('Storage size [av.l.h.]')
-    ylabel('Balancing power [av.l.h.]')
+   
+   
+    xlabel('Storage energy capacity [GWh]')
+    ylabel(r'Stored share of total surplus [%]')
       
-    axis(xmin=0,xmax=amax(CS),ymin=0)
-      
+    axis(xmin=0,xmax=amax(CS*mean(L)),ymin=0,ymax=100)
+    
+    legend(loc='upper right',title='VRE gross share',ncol=2)  
+          
     tight_layout()
     save_file_name = 'plot_storage_balancing_synergy'+'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
     
 
-def plot_vertical_line_and_label(x,y,textlabel=None,dx=None,ls='--',color='k',lw=1):
+def plot_vertical_line_and_label(x,y,textlabel=None,dx=None,ls='--',color='k',lw=1,ymax=1,ymin=0):
 
     if dx==None:
         dx=0.05*x
 
-    axvline(x,ls=ls,color=color,lw=lw)
+    axvline(x,ls=ls,color=color,lw=lw,ymin=ymin,ymax=ymax)
     text(x-dx,y,textlabel,weight='semibold',fontsize=10,ha='right')
     
     
@@ -2006,42 +2133,52 @@ def get_ISET_country_data(ISO='DK',path='./data/',silent=True):
     if not valid_ISO(ISO):
         sys.exit("Error (43nlksd): No such country ISO ({0}). For a list of names use get_ISET_country_names().".format(ISO))
     
-    filename = 'ISET_country_' + ISO + '.npz'
+    try:
+        a = get_ISET_country_data.cache
+    except AttributeError:
+        get_ISET_country_data.cache = dict()
     
     try:
-        #Load the data file if it exists:
-        npzfile = np.load(path + filename)
-        if ~silent:
-            print 'Loaded file: ', path + filename
-            sys.stdout.flush()
+        t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data.cache[ISO];
+    except KeyError:
+        filename = 'ISET_country_' + ISO + '.npz'
         
-    except IOError:
-        print 'Datafile does not exist:', path + filename
-        print 'Trying to download data from pepsi...'
-        sys.stdout.flush()
-        try: 
-            #Normalized data: t, l, Gw, Gs, datetime_offset, datalabels = get_data_countries(schema='norm_agg_avg_1hour_pdata_caps_eu2020',localhost=True);
-            t, L, GW, GS, datetime_offset, datalabels = get_data_countries(localhost=True);
-        except:
-            sys.exit("Error (sdf3dz1): Could not connect to pepsi. Setup ssh access first: ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk")
-            
-        #Save all country files:
-        for i in arange(len(datalabels)):
-            ISO_ = ISET2ISO_country_codes(datalabels[i])
-            filename_ =  'ISET_country_' + ISO_ + '.npz'
-            np.savez(path + filename_,t=t, L=L[i], Gw=GW[i]/mean(GW[i]), Gs=GS[i]/mean(GS[i]), datetime_offset=datetime_offset, datalabel=ISO_)
+        try:
+            #Load the data file if it exists:
+            npzfile = np.load(path + filename)
             if ~silent:
-                print 'Saved file: ', path + filename_
+                print 'Loaded file: ', path + filename
                 sys.stdout.flush()
-         
-        #Load the relevant file now that it has been created:       
-        npzfile = np.load(path + filename)
-        if ~silent:
-            print 'Loaded file: ', path + filename
+            
+        except IOError:
+            print 'Datafile does not exist:', path + filename
+            print 'Trying to download data from pepsi...'
             sys.stdout.flush()
+            try: 
+                #Normalized data: t, l, Gw, Gs, datetime_offset, datalabels = get_data_countries(schema='norm_agg_avg_1hour_pdata_caps_eu2020',localhost=True);
+                t, L, GW, GS, datetime_offset, datalabels = get_data_countries(localhost=True);
+            except:
+                sys.exit("Error (sdf3dz1): Could not connect to pepsi. Setup ssh access first: ssh -L5432:localhost:5432 USERNAME@pepsi.imf.au.dk")
+                
+            #Save all country files:
+            for i in arange(len(datalabels)):
+                ISO_ = ISET2ISO_country_codes(datalabels[i])
+                filename_ =  'ISET_country_' + ISO_ + '.npz'
+                np.savez(path + filename_,t=t, L=L[i], Gw=GW[i]/mean(GW[i]), Gs=GS[i]/mean(GS[i]), datetime_offset=datetime_offset, datalabel=ISO_)
+                if ~silent:
+                    print 'Saved file: ', path + filename_
+                    sys.stdout.flush()
+             
+            #Load the relevant file now that it has been created:       
+            npzfile = np.load(path + filename)
+            if ~silent:
+                print 'Loaded file: ', path + filename
+                sys.stdout.flush()
+        
+        t, L, Gw, Gs, datetime_offset, datalabel = npzfile['t'], npzfile['L'], npzfile['Gw'], npzfile['Gs'], npzfile['datetime_offset'], npzfile['datalabel']
+        npzfile.close()
     
-    t, L, Gw, Gs, datetime_offset, datalabel = npzfile['t'], npzfile['L'], npzfile['Gw'], npzfile['Gs'], npzfile['datetime_offset'], npzfile['datalabel']
-    npzfile.close()
+        get_ISET_country_data.cache[ISO] = (t, L, Gw, Gs, datetime_offset, datalabel)
     
     return t, L, Gw, Gs, datetime_offset, datalabel
 

@@ -36,6 +36,162 @@ color_opt = (0.53,0.73,0.37)
 ## Standard figure size:
 figure_size = [6.5,4.3]
 
+def plot_duration_curves(ISO='DK', gamma=[0,.25,.5,.75,1.], alpha_w=.8, CS=None, N_bins=211):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    duration_residual_load, power_residual_load = zeros((len(gamma),N_bins)), zeros((len(gamma),N_bins))
+    duration_upregulation, power_upregulation = zeros((len(gamma),N_bins)), zeros((len(gamma),N_bins))
+    duration_downregulation, power_downregulation = zeros((len(gamma),N_bins)), zeros((len(gamma),N_bins))
+    for i in arange(len(gamma)):
+        duration_residual_load[i], power_residual_load[i] = get_duration_curve_residual_load(ISO, gamma[i], alpha_w, CS, N_bins)
+        duration_upregulation[i], power_upregulation[i] = get_duration_curve_upregulation(ISO, gamma[i], alpha_w, CS, N_bins)
+        duration_downregulation[i], power_downregulation[i] = get_duration_curve_downregulation(ISO, gamma[i], alpha_w, CS, N_bins)
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    ### Residual load
+    close(1);figure(1);clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
+    
+    for i in arange(len(gamma)):
+        plot(duration_residual_load[i],power_residual_load[i]*mean(L),label=str(gamma[i]))
+    
+    axis(xmin=1,xmax=1.05e4,ymin=0,ymax=1.05*max(L))
+    
+    xscale('log')
+    
+    xlabel('Hours')
+    ylabel('Power')
+    
+    legend(title='Duration curve',loc='lower left')
+    
+    tight_layout()
+    save_figure('plot_duration_curves_residual_load_' + ISO + '.pdf')
+    
+    ### Upregulation
+    close(1);figure(1);clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
+    
+    for i in arange(len(gamma)):
+        plot(duration_upregulation[i],power_upregulation[i]*mean(L),label=str(gamma[i]))
+    
+    axis(xmin=1,xmax=1.05e4,ymin=0,ymax=1.05*max(L)/2.)
+    
+    xscale('log')
+    
+    xlabel('Hours')
+    ylabel('Power')
+    
+    legend(title='upregulation',loc='upper right')
+    
+    tight_layout()
+    save_figure('plot_duration_curves_upregulation_' + ISO + '.pdf')
+    
+    ### Downregulation
+    close(1);figure(1);clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
+    
+    for i in arange(len(gamma)):
+        plot(duration_downregulation[i],power_downregulation[i]*mean(L),label=str(gamma[i]))
+    
+    axis(xmin=1,xmax=1.05e4,ymin=0,ymax=1.05*max(L)/2.)
+    
+    xscale('log')
+    
+    xlabel('Hours')
+    ylabel('Power')
+    
+    legend(title='downregulation',loc='upper right')
+    
+    tight_layout()
+    save_figure('plot_duration_curves_downregulation_' + ISO + '.pdf')
+    
+def get_duration_curve_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bins=211):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    bin_edges = N_bins #linspace(0,2,N_bins+1)
+
+    residual_load = get_positive(-get_mismatch(L, Gw, Gs, gamma, alpha_w,CS))
+
+    bin_counts, bin_edges = np.histogram(residual_load,bin_edges)
+    bin_center = bin_edges[:-1] + diff(bin_edges)/2.
+    
+    duration = 365.*24. - cumsum(bin_counts)*365.*24./len(L)
+    power = bin_center
+
+    return duration, power
+
+def get_duration_curve_upregulation(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bins=211):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    bin_edges = N_bins #linspace(0,2,N_bins+1)
+
+    residual_load = get_positive(-get_mismatch(L, Gw, Gs, gamma, alpha_w,CS))
+
+    upregulation = get_positive(diff(residual_load))
+
+    bin_counts, bin_edges = np.histogram(upregulation,bin_edges)
+    bin_center = bin_edges[:-1] + diff(bin_edges)/2.
+    
+    duration = 365.*24. - cumsum(bin_counts)*365.*24./len(L)
+    power = bin_center
+
+    return duration, power
+
+def get_duration_curve_downregulation(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bins=211):
+
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    bin_edges = N_bins #linspace(0,2,N_bins+1)
+
+    residual_load = get_positive(-get_mismatch(L, Gw, Gs, gamma, alpha_w,CS))
+
+    downregulation = get_positive(-diff(residual_load))
+
+    bin_counts, bin_edges = np.histogram(downregulation,bin_edges)
+    bin_center = bin_edges[:-1] + diff(bin_edges)/2.
+    
+    duration = 365.*24. - cumsum(bin_counts)*365.*24./len(L)
+    power = bin_center
+
+    return duration, power
+
+def plot_phase_space_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None):
+    
+    #Load data
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+
+    residual_load = get_positive(-get_mismatch(L, Gw, Gs, gamma, alpha_w,CS))
+    
+    #Set plot options	
+    matplotlib.rcParams['font.size'] = 10
+
+    ### Residual load
+    close(1);figure(1);clf()
+    gcf().set_dpi(300)
+    gcf().set_size_inches([5.25,3.5])
+    
+    plot(residual_load[:-1],diff(residual_load),'.')
+    
+    axis(xmin=0,xmax=2,ymin=-0.5,ymax=.5)
+    
+    xlabel('Residual load')
+    ylabel('Ramp 1h')
+    
+    tight_layout()
+    save_figure('plot_phase_space_residual_load_' + 'g{0:0.2f}_'.format(gamma) + ISO + '.png')
+
 def plot_storage_balancing_synergy_old(ISO='DK', gamma=[.75,1.,1.25], CS=linspace(0,24,5)):
 
     #Load data

@@ -60,3 +60,27 @@ def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tick
         ax2.invert_yaxis()
     
     ax2.yaxis.set_major_formatter(majorFormatter)
+    
+def get_high_low_fft(load, tau=24):
+	"Error if len(load) not even"
+	
+	iseven = 2*(len(load)/2) == len(load)
+	if not iseven:
+		print "Warning! Uneven length array. Patching the end. (dfkl32k)"
+		load = concatenate([load,[load[-1]]])
+	
+	time = arange(len(load));
+	freq = fftfreq(len(time))[:len(time)/2+1]
+	load_fft = rfft(load);
+
+	sigma = tau*2;
+	kernel = exp(-2*(pi*freq/(2*pi)*sigma)**2);
+
+	load_fft = rfft(load);
+	load_high_gauss = irfft(load_fft*(1-kernel)).real;
+	load_low_gauss = load - load_high_gauss;
+	
+	if iseven:
+		return load_low_gauss, load_high_gauss
+	else:
+		return load_low_gauss[:-1], load_high_gauss[:-1]

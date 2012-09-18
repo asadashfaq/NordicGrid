@@ -26,7 +26,7 @@ from scipy.stats.mstats import mquantiles
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import calendar #Used to place day labels on plots
 
-##Colors, should be moved to a color module
+## Colors, should be moved to a color module
 color_wind = (0.5,0.7,1.)
 color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)

@@ -19,13 +19,18 @@ color_solar = (1.,.8,0.)
 
 #
 # plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0])
-# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=7.6,label='storage')
+# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=7.6,label='storage',use_CS_opt=True)
+# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=12,label='storage_12h_BalOptMix')
+# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=12,label='storage_12h',use_CS_opt=True)
 #
-def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2,label=''):
+def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2,label='', use_CS_opt=False):
     
     p_gamma = array(p_gamma,ndmin=1)
     
-    year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS, rel_tol)
+    if use_CS_opt:
+        year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS, rel_tol)
+    else:
+        year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS=None, rel_tol=rel_tol)
 
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
     
@@ -54,17 +59,12 @@ def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=
         storage_sum[i] = mean(extraction)*365*24
     
 
-    #Set plot options	
-    matplotlib.rcdefaults()
-    matplotlib.rcParams['font.size'] = 10
-
     ## Energy produced
     close(1); figure(1);
-    gcf().set_dpi(300)
     gcf().set_size_inches([6.5,4.5])
 
     bar(year,wind_sum/1e3,color=color_wind,align='center',label='Wind')
-    bar(year,solar_sum/1e3,bottom=wind_sum/1e3,color=color_solar,align='center',label='Solar')    
+    bar(year,solar_sum/1e3,bottom=wind_sum/1e3,color=color_solar,align='center',label='Solar PV')    
     if CS!=None:
         bar(year,storage_sum/1e3,bottom=(wind_sum+solar_sum)/1e3,color='green',align='center',label='Storage output')    
         bar(year,surplus_sum/1e3,bottom=(wind_sum+solar_sum+storage_sum)/1e3,color='red',align='center',label='Surplus - Storage output')    
@@ -120,7 +120,10 @@ def get_wind_solar_use(year,gamma,alpha_w,ISO='DK',CS=None):
         
     return wind_sum, solar_sum, surplus_sum, storage_sum 
 
-def plot_capacity_factor_wind(p_year=[1900,1978,1979,1980,1981,1982,1983,1985,1990,1993,1997,1999,2002,2009,2015,2020,2030,2050,2100],p_CF_wind=[0.05,0.05,0.13,0.10,0.19,0.22,0.15,0.27,0.19,0.30,0.32,0.22,0.35,0.46,0.46,0.48,0.50,0.51,0.51],textlabel='Denmark'):
+def plot_capacity_factor_wind(p_year=[1900,1978,1979,1980,1981,1982,1983,1984,1985,1986,1987,1988,1990,1991,1992,1993,1997,2002,2009,2015,2020,2030,2050,2100],p_CF_wind=[0.05,0.05,0.13,0.10,0.19,0.22,0.15,0.08,0.27,0.15,0.16,0.27,0.19,0.40,0.32,0.30,0.32,0.35,0.46,0.46,0.48,0.50,0.51,0.51],textlabel='Denmark'):
+
+    
+    
 
     CF_wind = get_capacity_factor_wind(p_year,p_CF_wind)
     
@@ -164,7 +167,7 @@ def plot_capacity_factor_solar(p_year=[1960,1990,2010,2015,2030,2050,2100],p_CF_
     save_file_name = 'plot_capacity_factor_solar.pdf'
     save_figure(save_file_name)
 
-def get_capacity_factor_wind(p_year=[1900,1978,1979,1980,1981,1982,1983,1985,1990,1993,1997,1999,2002,2009,2015,2020,2030,2050,2100],p_CF_wind=[0.05,0.05,0.13,0.10,0.19,0.22,0.15,0.27,0.19,0.30,0.32,0.22,0.35,0.46,0.46,0.48,0.50,0.51,0.51]):
+def get_capacity_factor_wind(p_year=[1900,1978,1979,1980,1981,1982,1983,1984,1985,1986,1987,1988,1990,1991,1992,1993,1997,2002,2009,2015,2020,2030,2050,2100],p_CF_wind=[0.05,0.05,0.13,0.10,0.19,0.22,0.15,0.08,0.27,0.15,0.16,0.27,0.19,0.40,0.32,0.30,0.32,0.35,0.46,0.46,0.48,0.50,0.51,0.51]):
 
     #CF_wind = UnivariateSpline(p_year,p_CF_wind,s=0.1)
     year = linspace(amin(p_year),amax(p_year),100)
@@ -262,10 +265,13 @@ def plot_installed_capacity_optimal_path(p_year, p_gamma, ISO='DK', year0=1980.,
     surplus_color = (1,.2,.2)
     
     bar(year,wind_sum,color=color_wind,align='center',label='Wind (used)',lw=0.9)
-    bar(year,energy_wind*annual_TWh-wind_sum,bottom=wind_sum,hatch='\\',color=surplus_color,align='center',label='Wind (surplus)',edgecolor='k',lw=0.9)
+    bar(year,solar_sum,bottom=wind_sum,align='center',color=color_solar,label='Solar PV (used)',lw=0.9)
     
-    bar(year,solar_sum,bottom=energy_wind*annual_TWh,align='center',color=color_solar,label='Solar PV (used)',lw=0.9)
-    bar(year,energy_solar*annual_TWh-solar_sum,bottom=solar_sum+energy_wind*annual_TWh,hatch='//',color=surplus_color,align='center',label='Solar PV (surplus)',lw=0.9)
+    
+    bar(year,energy_wind*annual_TWh-wind_sum,bottom=solar_sum+wind_sum,hatch='\\',color=surplus_color,align='center',label='Wind (surplus)',edgecolor='k',lw=0.9)
+    
+    
+    bar(year,energy_solar*annual_TWh-solar_sum,bottom=solar_sum+wind_sum+(energy_wind*annual_TWh-wind_sum),hatch='//',color=surplus_color,align='center',label='Solar PV (surplus)',lw=0.9)
     
     plot(p_year,p_gamma*mean(L)*365*24/1e3,'ko',label='Target')
     for y, g in zip(p_year,p_gamma):

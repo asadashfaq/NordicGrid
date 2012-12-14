@@ -5,7 +5,7 @@
 #  Created by Gorm Bruun Andresen on 08/12/2011.
 #  Copyright (c) 2011 Department of Engineering, University of Aarhus. All rights reserved.
 #
-#
+
 
 #Standard modules
 from pylab import *
@@ -16,8 +16,9 @@ import os, sys
 from copy import deepcopy
 
 #Custom modules
-sys.path.append( './zdcpf/' ) #This can be done in a more fancy way using __init__.py or some such.
-from zdcpf import *
+sys.path.append( './EuropeanGridR/' ) #This can be done in a more fancy way using __init__.py or some such.
+from aures import solve #R's magic flow solver.
+from auresc import Nodes
 from shortcuts import *
 from SingleCountry import get_ISET_country_data, get_balancing
 
@@ -37,6 +38,13 @@ color_wind = (0.5,0.7,1.,1)
 color_solar = (1.,0.8,0,1)
 color_edge = (.2,.2,.2)
 #color_RES = (0.4,.65,0.25)
+
+
+def test_new_flow_calc():
+
+    N = Nodes(admat='./settings/admat_2011.txt',path='./data/',files=['ISET_country_AT.npz', 'ISET_country_FI.npz', 'ISET_country_NL.npz', 'ISET_country_BA.npz', 'ISET_country_FR.npz'])
+    
+    return N
 
 
 #This function will later be replaced by some fancy save/load thing.

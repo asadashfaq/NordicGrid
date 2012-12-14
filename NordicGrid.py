@@ -48,26 +48,13 @@ def test_new_flow_calc(lapse=None):
     
     return N, F
 
-
-#This function will later be replaced by some fancy save/load thing.
-# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=None)
-# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24)
-# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(lapse=50*24,add_color=True)
-#
-# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,path_nodes='./data/nodes/constraints_2011/')
-# year_cu, data_nodes_cu, data_flows_cu = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=1,path_nodes='./data/nodes/copper/')
-#
-#
-# FOR NINGLING, MAY 2012:
-# year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,path_nodes='./data/nodes/constraints_2011_mod/')
-#
-# year_ref, data_nodes_ref, data_flows_ref = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,copper=0,path_nodes='./data/nodes/constraints_2011_new/')
-#
-#
-def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence.txt',constraints='constraints.txt',setupfile='setupnodes.txt',coop=0,copper=0,path='./settings/',lapse=None,add_color=False,path_nodes='./data/nodes/'):
+def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_DE-N.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_NO.npz'], copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True):
+    
+    """ (almost) Updated to use EuropeanGridR. Colors are not yet working."""
 
     #Initialize
-    N = Nodes()
+    N = Nodes(admat=admat,path=path_data,files=files_data)
+    
     Gamma = get_basepath_gamma(year)
     dirList = os.listdir(path_nodes)
     
@@ -80,7 +67,7 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence
         flows_filename = 'flows_year_'+str(year[i])
 
         if nodes_filename+'.npz' in dirList:
-            N._load_nodes_(nodes_filename+'.npz',path=path_nodes)
+            N._load_nodes_(nodes_filename+'.npz',full_load=True,path=path_nodes)
             F = load(path_nodes+flows_filename+'.npy')
             
             print 'Loaded nodes file: '+path_nodes+nodes_filename
@@ -95,8 +82,10 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),incidence='incidence
             sys.stdout.flush()
             
             #Calculate flows
-            N,F = zdcpf(N,incidence=incidence,constraints=constraints,setupfile=setupfile,path=path,coop=coop,copper=copper,lapse=lapse)
             
+            N,F = solve(N, path=path, copper=copper, h0=h0, b=b, lapse=lapse, squaremin=squaremin, maxb=maxb)
+            
+            #### DOES NOT WORK YET!!!
             if add_color:
                 N.add_colored_import(F,lapse=lapse)
             

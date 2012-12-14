@@ -164,7 +164,7 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
         add_duplicate_yaxis(gcf(),unit_multiplier=mean(N[node_id].load)/1e3,label='[GW]')
 
         tight_layout(pad=.5)
-        savename = 'plot_generation_summary_vs_year_Stacked_' + datalabel + N[node_id].name.replace(' ','_') + '.pdf'
+        savename = 'plot_generation_summary_vs_year_Stacked_' + datalabel + '.pdf'#+ N[node_id].name.replace(' ','_') + '.pdf'
         save_figure(savename)
 
 

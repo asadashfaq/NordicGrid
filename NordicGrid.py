@@ -313,7 +313,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
         pp_text.append(region_names[0])
         for i in arange(1,len(Nodes)):
-            fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i],cumsum(colored_import_av,axis=1).transpose()[i-1],label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i],cumsum(colored_import_av,axis=1).transpose()[i-1],label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
@@ -348,7 +348,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
         pp_text.append(region_names[0])
         for i in arange(1,len(Nodes)):
-            fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
@@ -424,7 +424,7 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
         pp_text.append(region_names[0])
         for i in arange(1,len(Nodes)):
-            fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i]/envelope,cumsum(colored_import_av,axis=1).transpose()[i-1]/envelope,label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i]/envelope,cumsum(colored_import_av,axis=1).transpose()[i-1]/envelope,label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
@@ -461,7 +461,7 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
         pp_text.append(region_names[0])
         for i in arange(1,len(Nodes)):
-            fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=Nodes[i].name,color=colors[i],edgecolor='k',lw=.5)
+            fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 

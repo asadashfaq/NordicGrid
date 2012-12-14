@@ -1,3 +1,6 @@
 [submodule "zdcpf"]
 	path = zdcpf
 	url = git@github.com:AUESG/zdcpf.git
+[submodule "EuropeanGridR"]
+	path = EuropeanGridR
+	url = git@github.com:AUESG/EuropeanGridR.git

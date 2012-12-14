@@ -52,11 +52,11 @@ def test_new_flow_calc(lapse=None):
 #
 #   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=365*24,path_nodes='./output_data/test/')
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=365*24,path_nodes='./output_data/test/')
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21)[2:14],lapse=None,path_nodes='./output_data/test/')
 #
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True):
     
-    """ (almost) Updated to use EuropeanGridR. Colors are not yet working."""
+    """ (almost) Updated to use EuropeanGridR."""
 
     #Initialize
     N = Nodes(admat=admat,path=path_data,files=files_data)
@@ -101,7 +101,9 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
             
             #### DOES NOT WORK YET!!!
             if add_color:
-                N.add_colored_import(F,lapse=lapse)
+                #N.add_colored_import(F,lapse=lapse)
+                N = track_imports(N,F)
+                print 'Added color.'
             
             N.save_nodes(nodes_filename,path=path_nodes)
             np.save(path_nodes+flows_filename,F)
@@ -115,7 +117,7 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
 # plot_generation_summary_vs_year(year, data_nodes,lapse=365*24,datalabel='Test')
 #
 def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
-    """ (almost) Updated to use EuropeanGridR. Colors are not yet working."""
+    """ (almost) Updated to use EuropeanGridR."""
     
     if datalabel != None:
         datalabel = datalabel + '_'
@@ -179,9 +181,10 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 
 ##New version
 #
-
-# 
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None)
+#
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
+    """ (almost) Updated to use EuropeanGridR."""
 
     N = data_nodes[0]
     region_name = ['Norway','Sweden','Denmark West','Denmark East','Germany North']
@@ -198,13 +201,13 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
             gross_share_ = gross_share_ + node.gamma*node.mean
             
             #Power used locally
-            RES_local_av_ = RES_local_av_ + node.get_localRES()[:lapse].mean() + sum(node.colored_import[find([id in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
+            RES_local_av_ = RES_local_av_ + node.get_localRES()[:lapse].mean() + sum(node.power_mix[find([id in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
             balancing_av_ = balancing_av_ + node.get_localBalancing()[:lapse].mean()
-            import_av_ = import_av_ + sum(node.colored_import[find([id not in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
+            import_av_ = import_av_ + sum(node.power_mix[find([id not in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
             
             #Power not used locally
             curtailment_av_ = curtailment_av_ + node.curtailment[:lapse].mean()
-            export_av_ = export_av_ + (node.get_export() - sum(node.colored_import[find([id in node_id for id in arange(len(N))])],axis=0))[:lapse].mean()
+            export_av_ = export_av_ + (node.get_export() - sum(node.power_mix[find([id in node_id for id in arange(len(N))])],axis=0))[:lapse].mean()
             
         #Normalize all
         gross_share[i] = gross_share_/load_sum
@@ -287,13 +290,13 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         #Calculate average import
         colored_import_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
-            colored_import_av[i] = mean(data[i][node_id].colored_import.transpose()[:lapse], axis=0)/data[i][node_id].mean
+            colored_import_av[i] = mean(data[i][node_id].power_mix.transpose()[:lapse], axis=0)/data[i][node_id].mean
 
         #Calculate export
         colored_export_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
             for j in arange(len(Nodes)):
-                colored_export_av[i][j] = mean(data[i][j].colored_import[node_id])/data[i][node_id].mean
+                colored_export_av[i][j] = mean(data[i][j].power_mix[node_id])/data[i][node_id].mean
 
         #Set plot options	
         matplotlib.rcParams['font.size'] = 10
@@ -396,13 +399,13 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         #Calculate average import
         colored_import_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
-            colored_import_av[i] = mean(data[i][node_id].colored_import.transpose()[:lapse], axis=0)/data[i][node_id].mean
+            colored_import_av[i] = mean(data[i][node_id].power_mix.transpose()[:lapse], axis=0)/data[i][node_id].mean
 
         #Calculate export
         colored_export_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
             for j in arange(len(Nodes)):
-                colored_export_av[i][j] = mean(data[i][j].colored_import[node_id])/data[i][node_id].mean
+                colored_export_av[i][j] = mean(data[i][j].power_mix[node_id])/data[i][node_id].mean
 
         #Set plot options	
         matplotlib.rcParams['font.size'] = 10

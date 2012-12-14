@@ -17,7 +17,7 @@ from copy import deepcopy
 
 #Custom modules
 sys.path.append( './EuropeanGridR/' ) #This can be done in a more fancy way using __init__.py or some such.
-from aures import aures_solve #R's magic flow solver.
+from aures import solve as aures_solve #R's magic flow solver.
 from auresc import Nodes
 from shortcuts import *
 from SingleCountry import get_ISET_country_data, get_balancing

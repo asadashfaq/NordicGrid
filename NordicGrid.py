@@ -49,7 +49,7 @@ def test_new_flow_calc(lapse=None):
     return N, F
 
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year()
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=365*24,path_nodes='./output_data/test/')
 #
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_DE-N.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_NO.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True):
     

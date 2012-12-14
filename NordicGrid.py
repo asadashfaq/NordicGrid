@@ -40,11 +40,13 @@ color_edge = (.2,.2,.2)
 #color_RES = (0.4,.65,0.25)
 
 
-def test_new_flow_calc():
+def test_new_flow_calc(lapse=None):
 
     N = Nodes(admat='./settings/admat_2011.txt',path='./data/',files=['ISET_NordicGrid_DE-N.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_NO.npz'])
     
-    return N
+    N,F = solve(N, lapse=lapse)
+    
+    return N, F
 
 
 #This function will later be replaced by some fancy save/load thing.

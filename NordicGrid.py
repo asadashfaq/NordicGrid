@@ -17,7 +17,7 @@ from copy import deepcopy
 
 #Custom modules
 sys.path.append( './EuropeanGridR/' ) #This can be done in a more fancy way using __init__.py or some such.
-from aures import solve #R's magic flow solver.
+from aures import aures_solve #R's magic flow solver.
 from auresc import Nodes
 from shortcuts import *
 from SingleCountry import get_ISET_country_data, get_balancing
@@ -44,7 +44,7 @@ def test_new_flow_calc(lapse=None):
 
     N = Nodes(admat='./settings/admat_2011.txt',path='./data/',files=['ISET_NordicGrid_DE-N.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_NO.npz'])
     
-    N,F = solve(N, lapse=lapse)
+    N,F = aures_solve(N, lapse=lapse)
     
     return N, F
 

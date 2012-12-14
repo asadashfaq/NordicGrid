@@ -19,6 +19,7 @@ from copy import deepcopy
 sys.path.append( './EuropeanGridR/' ) #This can be done in a more fancy way using __init__.py or some such.
 from aures import solve as aures_solve #R's magic flow solver.
 from auresc import Nodes
+from colourutils import track_imports
 from shortcuts import *
 from SingleCountry import get_ISET_country_data, get_balancing
 
@@ -78,6 +79,14 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
             print 'Loaded nodes file: '+path_nodes+nodes_filename
             print 'Loaded flows file: '+path_nodes+flows_filename
             sys.stdout.flush()
+            
+            if add_color:
+                #N.add_colored_import(F,lapse=lapse)
+                track_imports(N,F)
+                N.save_nodes(nodes_filename,path=path_nodes)
+                print 'Added color and resaved.'
+                sys.stdout.flush()
+            
         else:
             #Apply year to nodes (Dummy gamma's)
             N.set_gammas(Gamma.transpose()[i])

@@ -42,7 +42,7 @@ color_edge = (.2,.2,.2)
 
 def test_new_flow_calc():
 
-    N = Nodes(admat='./settings/admat_2011.txt',path='./data/',files=['ISET_country_AT.npz', 'ISET_country_FI.npz', 'ISET_country_NL.npz', 'ISET_country_BA.npz', 'ISET_country_FR.npz'])
+    N = Nodes(admat='./settings/admat_2011.txt',path='./data/',files=['ISET_NordicGrid_DE-N.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_NO.npz'])
     
     return N
 

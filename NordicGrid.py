@@ -82,7 +82,7 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
             
             if add_color:
                 #N.add_colored_import(F,lapse=lapse)
-                track_imports(N,F)
+                N = track_imports(N,F)
                 N.save_nodes(nodes_filename,path=path_nodes)
                 print 'Added color and resaved.'
                 sys.stdout.flush()

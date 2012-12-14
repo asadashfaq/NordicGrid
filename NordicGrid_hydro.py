@@ -14,7 +14,7 @@ import os, sys
 ## Custom modules and functions
 sys.path.append( './zdcpf/' ) #This can be done in a more fancy way using __init__.py or some such.
 from zdcpf_storage import one_way_storage
-from water import get_inflow, get_median_storage_level_Norway
+from water import get_inflow, get_median_storage_level_Norway, get_median_storage_power_Norway
 from shortcuts import *
 from SingleCountry import get_ISET_country_data
 
@@ -77,18 +77,19 @@ def plot_one_way_storage(t=None,volume=80e3,P_out=30,N=None):
     
     return storage_lake
 
-def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=2*365,gamma=0,alpha_w=1):
+def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alpha_w=1):
     
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
-    L = L*1.1
+    #L = L*1.1
     
     inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True)
     
     if N_days==None:
         N_days = amax(t)
     
-    median_level = volume*get_median_storage_level_Norway()[0]
+    #median_level = volume*get_median_storage_level_Norway()[0]
+    median_level = volume*get_median_storage_power_Norway(returnall=True)[2][0]
     median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
     median_level = copy(median_level[0:len(t)])
     
@@ -99,22 +100,23 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=2*365,gamma=0,alph
     mismatch_ = mismatch
     #print 'Average hourly deficit: ' + str(sum(mismatch)/len(mismatch))
     deficit = sum(mismatch)
-    print sum(mismatch)
+    print 'Mismatch sum (before balancing): ' + str(sum(mismatch))
     #balancing = lambda x: get_positive(-(mismatch_+x))
     
     #x_bal = brentq(lambda x: sum(balancing(x))+deficit, amin(mismatch), amax(mismatch))
     #print x_bal# - 1e-8 
     
     #mismatch = mismatch + balancing(x_bal)
-    balancing = 0 #deficit/len(t)*ones_like(t)
+    balancing = deficit/len(t)*ones_like(t)
     mismatch = mismatch - balancing
-    print sum(mismatch)
+    print 'Mismatch sum (after balancing): ' + str(sum(mismatch))
     
     mismatch_r = zeros_like(mismatch)
     
     i, ii = 0, 0
     storage_lake.virtual_two_way_storage.level[-1] = storage_level[0]
-    storage_lake.virtual_two_way_storage.power_balance[-1] = 0# storage_lake.virtual_two_way_storage.level[-1] - median_level[0]
+    print storage_lake.virtual_two_way_storage.level[-1] - median_level[0]
+    storage_lake.virtual_two_way_storage.power_balance[-1] = storage_lake.virtual_two_way_storage.level[-1] - median_level[0]
     while storage_lake.iscyclic()!=True:
     
         if mismatch[i]<0:
@@ -126,17 +128,19 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=2*365,gamma=0,alph
         mismatch_r[i] = mismatch[i] - charge
         
         if mod(i+1,len(mismatch))==0:
+            #storage_lake.virtual_two_way_storage.level[-1] = storage_level[0] # Testing reset of initial level.
             ii = ii +1
             print ii, i
-            if ii==3:
+            if ii==1:
                 break
         i = mod(i+1,len(mismatch))
     print ii, i
-    print 0.6*volume, storage_lake.virtual_two_way_storage.level[-1]
+    print storage_lake.virtual_two_way_storage.level[:3], storage_lake.virtual_two_way_storage.level[-3:]
     
     close(1);figure(1);clf()
     
     subplot(211)
+    plot(t,-storage_lake.virtual_two_way_storage.ekstra_discharge,'y-',label='Ekstra discharge')
     plot(t,mismatch,label='Mismatch')
     plot(t,mismatch_r,label='Mismatch_r')
     fill_between(t,balancing,edgecolor=None,lw=0,facecolor='r')
@@ -145,7 +149,9 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=2*365,gamma=0,alph
     plot(t,-storage_lake.virtual_two_way_storage.power_cap_out,'k-',lw=.5,alpha=.5)
     
     plot(t,storage_lake.virtual_two_way_storage.default_charge,'k-',lw=.5,label='Default charge')
+    plot(t,storage_lake.virtual_two_way_storage.default_charge-volume*0.5/365./24,'k--',lw=.5,label='Default charge (offset)')
     plot(t,storage_lake.virtual_two_way_storage.power_balance/volume*100,'r-',lw=.5,label='Power balance')
+    
     
     xlabel('Time [h]')
     ylabel('Power [GWh/h]')
@@ -163,11 +169,18 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=2*365,gamma=0,alph
     #storage_level_real = zeros_like(t)
     #for i in arange(len(storage_level_real)):
     #    storage_level_real[i] = storage_level_real_[mod(i,len(storage_level_real_))]
-    plot(t,storage_level/volume,'k-')
-    plot(t,median_level/volume,'k--')
+    plot(t,storage_level/volume,'k-',label='Historical level')
+    plot(t,median_level/volume,'k--',label='Median level')
     
+    min_level = zeros_like(median_level)
+    for i in arange(len(median_level)):
+        min_level[i] = -amin(median_level - median_level[i])
+    plot(t,min_level/volume,'r-',label='Min level')
+            
     xlabel('Time [h]')
     ylabel('Storage filling fraction')
+    
+    legend()
     
     axis(xmin=0,xmax=N_days,ymin=0,ymax=1.)
     

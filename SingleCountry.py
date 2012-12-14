@@ -793,9 +793,6 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
     CS_fit_, P_in_, P_out_ = array(CS_fit_), array(P_in_), array(P_out_)
     print CS_fit_, P_in_, P_out_
     print CS_fit_[0], P_in_[0], P_out_[0]
-
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
     
     
     ## Plot storage energy capacity build-up
@@ -808,8 +805,10 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
         ## Pick color
         if alpha_w[i]==None:
             color = 'k'
+            mixtxt = ' (opt. mix)'
         elif alpha_w[i]==1:
             color = color_wind
+            mixtxt = ' (wind-only)'
         else:
             color = 'g'
             
@@ -817,18 +816,19 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
         if N_cycles[i]==50:
             ls = '-'
         elif N_cycles[i]==100:
-            ls = '--'
+            ls = ':'
         else:
             ls = '-.'
         
-        plot(gamma*annual_TWh,mean(L)*CS_fit_[i],color=color,ls=ls,label='{0:.0f}'.format(N_cycles[i]))
+        label_ = '{0:.0f}'.format(N_cycles[i]) + mixtxt
+        plot(gamma*annual_TWh,mean(L)*CS_fit_[i],color=color,ls=ls,label=label_)
 
     
     dx = 0.02*annual_TWh
-    plot_vertical_line_and_label(0.25*annual_TWh,10,r'25%',dx)
-    plot_vertical_line_and_label(0.5*annual_TWh,10,r'50%',dx)
-    plot_vertical_line_and_label(.75*annual_TWh,10,r'75%',dx)
-    plot_vertical_line_and_label(1.*annual_TWh,10,r'100%',dx)
+    plot_vertical_line_and_label(0.25*annual_TWh,15,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,15,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,15,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,15,r'100%',dx)
 
     xlabel('Wind plus solar energy [TWh/yr]')
     ylabel('Storage volume [GWh]')
@@ -839,7 +839,7 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
 
     axis(xmin=0,xmax=amax(gamma)*mean(L)*365*24/1e3,ymin=0,ymax=14*mean(L))
 
-    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]')
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=2)
 
     tight_layout()
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_EnergyCap_'+savelabel+'_'+ISO+'.pdf'
@@ -1285,13 +1285,18 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     save_file_name = 'plot_hourly_generation_alt_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
 
+# plot_monthly_summary('DK',gamma=0.75,alpha_w=None,label='optimal')
+# plot_monthly_summary('DK',gamma=0.75,alpha_w=1,label='wind')
+#
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=None,label='optimal')
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind')
 # plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar')
 #
-# plot_monthly_summary('DK',gamma=0.5,alpha_w=None,label='optimal_storage',CS=7.6)
-# plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind_storage',CS=7.6)
-# plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar_storage',CS=7.6)
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=None,label='optimal_storage',CS=2.54)
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=1,label='wind_storage',CS=2.54)
+# plot_monthly_summary('DK',gamma=0.5,alpha_w=0,label='solar_storage',CS=2.54)
+# plot_monthly_summary('DK',gamma=0.75,alpha_w=None,label='optimal_storage',CS=2.54)
+# plot_monthly_summary('DK',gamma=0.75,alpha_w=1,label='wind_storage',CS=2.54)
 #
 # plot_monthly_summary('DK',gamma=1,alpha_w=None,label='100p_optimal')
 # plot_monthly_summary('DK',gamma=1,alpha_w=1,label='100p_wind')
@@ -1312,13 +1317,17 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     mismatch = (wind+solar) - L
     
     if CS!=None or CS==0:
-        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS*mean(L))[0]
     else:
         mismatch_r = mismatch
     
     curtailment = get_positive(mismatch_r)
     filling = get_positive(mismatch - mismatch_r)
     extraction = get_positive(-(mismatch - mismatch_r))
+    
+    print "Curtailment: ", sum(curtailment)/8.
+    print "Filling: ", sum(filling)/8.
+    print "Extraction: ", sum(extraction)/8.
     
     wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
     solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
@@ -1444,9 +1453,9 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     if optimal == True:
        tabletitle = 'Optimal mix' 
     elif alpha_w==1:
-        tabletitle = r'100\% wind'
+        tabletitle = r'Wind-only'
     elif alpha_w==0:
-        tabletitle = r'100\% solar'       
+        tabletitle = r'Solar-only'       
     else:
        tabletitle = '{0:0.0f}\% wind, {1:0.0f}\% solar'.format(100*alpha_w,(1-alpha_w)*100)
     
@@ -1457,9 +1466,9 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
         #tabletext = r'\begin{tabular}{ l r } \multicolumn{2}{c}{\bf RES-E budget (DK)} \\[.5ex]' + \
         
         tabletext = r'\begin{tabular}{ l r } \multicolumn{2}{c}{\bf ' + tabletitle + r'} \\[.5ex]' + \
-            r'Consumed & ' + '{0:0.1f}'.format(sum(wind_sum+solar_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh \\ ' + \
-            r'Surplus & ' + '{0:0.1f}'.format(sum(curtail_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh  \\ \hline ' + \
-            r'Total &  ' + '{0:0.1f}'.format(gamma*mean(L)*24*365/1e3) + r'\phantom{)} TWh \\[1ex]' + \
+            r'Total VRE & ' + '{0:0.1f}'.format(gamma*mean(L)*24*365/1e3) + r'\phantom{)} TWh \\ ' + \
+            r'Consumed & (' + '{0:0.1f}'.format(sum(wind_sum+solar_sum)/len(L)*24*365/1e3) + r') TWh  \\ \hline ' + \
+            r'Surplus &  ' + '{0:0.1f}'.format(sum(curtail_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh \\[1ex]' + \
             r'\multicolumn{2}{l}{\it No storage.} \\' + \
             r'\end{tabular}'
         text(0.37,0.9,tabletext,fontsize=10,weight='semibold',ha='left',va='top',transform = gcf().transFigure,bbox=dict(boxstyle="round, pad=.75", fc="w",lw=1.5))
@@ -1467,10 +1476,10 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     else:
         
         tabletext = r'\begin{tabular}{ l r } \multicolumn{2}{c}{\bf ' + tabletitle + r'} \\[.5ex]' + \
-            r'Consumed & ' + '{0:0.1f}'.format(sum(wind_sum+solar_sum+storage_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh \\ ' + \
-            r'Surplus & ' + '{0:0.1f}'.format(sum(curtail_sum+storage_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh  \\ ' + \
+            r'Total VRE & ' + '{0:0.1f}'.format(gamma*mean(L)*24*365/1e3) + r'\phantom{)} TWh \\ ' + \
+            r'Consumed & (' + '{0:0.1f}'.format(sum(wind_sum+solar_sum)/len(L)*24*365/1e3) + r') TWh  \\ ' + \
             r'Storage & (' + '{0:0.1f}'.format(sum(storage_sum)/len(L)*24*365/1e3) + r') TWh  \\ \hline ' + \
-            r'Total &  ' + '{0:0.1f}'.format(gamma*mean(L)*24*365/1e3) + r'\phantom{)} TWh \\[1ex]' + \
+            r'Surplus &  ' + '{0:0.1f}'.format(sum(curtail_sum)/len(L)*24*365/1e3) + r'\phantom{)} TWh \\[1ex]' + \
             r'\multicolumn{2}{l}{\it Storage volume:} \\' + \
             r'\multicolumn{2}{l}{'+'{0:0.0f}'.format(mean(L)*CS)+r' GWh} \\' + \
             r'\end{tabular}'
@@ -2070,6 +2079,9 @@ def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,1
     save_file_name = 'plot_min_storage_cap_fixed_gamma_summary_'+'100x_gamma_{0:.0f}'.format(100*gamma)+'_'+'10xCS{0:0.0f}h'.format(10*CS[1])+'_'+ISO+'.pdf'
     save_figure(save_file_name)  
     
+
+#  get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.0,30])/3.94329, alpha_w=[1.], storage_gain=.90)
+#
 def get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.1,1.,10,30,nan])/3.94329, alpha_w=None, storage_gain=.90):
     """ All numbers are per year. CS=NaN gives results for seasonal storage at the relevant mix. alpha_w=None is balancing optimal mix, alpha_w=NaN is seasonal optimal mix."""
     

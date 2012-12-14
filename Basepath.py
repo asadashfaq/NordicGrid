@@ -23,14 +23,20 @@ color_solar = (1.,.8,0.)
 # plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=12,label='storage_12h_BalOptMix')
 # plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2050], p_gamma=[0.023,0.121,.219,0.5,1.0],CS=12,label='storage_12h',use_CS_opt=True)
 #
-def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2,label='', use_CS_opt=False):
+# plot_optimal_path_logistic_fit(p_year=[1990,2000,2010,2020,2030,2050], p_gamma=[0.023,0.121,.219,0.5,0.75,1.0],p_alpha_w=ones(6),label='WindOnly')
+def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=None, CS=None, rel_tol=1e-2, p_alpha_w=None,label='', use_CS_opt=False):
     
     p_gamma = array(p_gamma,ndmin=1)
     
-    if use_CS_opt:
-        year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS, rel_tol)
+    if p_alpha_w==None:
+        if use_CS_opt:
+            year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS, rel_tol)
+        else:
+            year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS=None, rel_tol=rel_tol)
     else:
-        year, gamma, alpha_w = get_optimal_path_logistic_fit(p_year, p_gamma, ISO, year0, year, CS=None, rel_tol=rel_tol)
+        year, gamma, alpha_w = get_wind_solar_logistic_fit(p_year, p_gamma, p_alpha_w, year0, year)
+    
+    
 
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
     
@@ -61,7 +67,7 @@ def plot_optimal_path_logistic_fit(p_year, p_gamma, ISO='DK', year0=1980., year=
 
     ## Energy produced
     close(1); figure(1);
-    gcf().set_size_inches([6.5,4.5])
+    # gcf().set_size_inches([6.5,4.5])
 
     bar(year,wind_sum/1e3,color=color_wind,align='center',label='Wind')
     bar(year,solar_sum/1e3,bottom=wind_sum/1e3,color=color_solar,align='center',label='Solar PV')    

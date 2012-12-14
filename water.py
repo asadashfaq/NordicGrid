@@ -84,7 +84,7 @@ def get_median_storage_level_Norway(quantile=0.5, returnall=False):
         start = date2num(datetime(year=years[i],month=1,day=1,hour=0))
         level_year[i] = get_storage_level_Norway(t=t_year,datetime_offset=start)
     
-    level_year_ = level_year
+    level_year_ = copy(level_year)
     level_year_[isnan(level_year)] = -.1
     level_median = mquantiles(level_year_,quantile,limit=(0,1),axis=0)
     
@@ -96,17 +96,74 @@ def get_median_storage_level_Norway(quantile=0.5, returnall=False):
         return level_median, level_year
     else:
         return level_median
-    
-def plot_stuff():
 
-    level_median, level_year = get_median_storage_level_Norway(returnall=True)
+def get_median_storage_power_Norway(quantile=0.5, smooth=True, cyclic_level=True, returnall=False):
+
+    level, t, datetime_offset = get_storage_level_Norway(returnall=True)
+    years = np.unique(array([date.year for date in num2date(t + datetime_offset)])) 
+    
+    t_year = arange(0,24*366,1)/24.
+    level_year, power_year = zeros((len(years),len(t_year))), zeros((len(years),len(t_year)))
+    for i in arange(len(years)):
+        start = date2num(datetime(year=years[i],month=1,day=1,hour=0))
+        level_year[i] = get_storage_level_Norway(t=t_year,datetime_offset=start)
+        power_year[i] = concatenate([diff(level_year[i]),[level_year[i][-1]-level_year[i][-2]]])
+    
+    power_year_ = copy(power_year)
+    power_year_[isnan(power_year)] = 2
+    
+    power_median = mquantiles(power_year_,quantile,limit=(-1,1),axis=0)
+    
+    
+    N_hour = 24*7
+    level_median = get_median_storage_level_Norway(quantile)
+    power_median_level = zeros_like(power_median)
+    for i in arange(len(power_median)):
+        if smooth:
+            power_median[i] = get_high_low_fft(power_median[i],N_hour)[0]
+        
+        if cyclic_level:
+            power_median[i] = power_median[i] - sum(power_median[i])/float(len(power_median[i]))
+        
+        power_median_level[i] = cumsum(power_median[i])+level_median[i][0]
+                
+    if returnall:
+        return power_median, power_year, power_median_level
+    else:
+        return power_median
+    
+def plot_stuff(quantile=0.5):
+
+    level_median, level_year = get_median_storage_level_Norway(returnall=True,quantile=quantile)
+    power_median, power_year, power_median_level = get_median_storage_power_Norway(returnall=True,smooth=True,quantile=quantile)
     
     close(1); figure(1)
     
+    subplot(311)
     for level_year_ in level_year:
         plot(level_year_)
         
     plot(level_median[0],'k-',lw=3)
+    #plot(cumsum(power_median[0])+level_median[0][0],'r--',lw=2)
+    plot(power_median_level[0],'r--',lw=2)
+
+    
+    subplot(312)
+    
+    for i in arange(len(power_year)):
+        #plot(cumsum(power_year[i])+level_year[i][0])
+        plot(power_year[i])
+        
+    #plot(cumsum(power_median[0])+level_median[0],'k-',lw=3)
+    plot(power_median[0],'k-',lw=3)
+    
+    plot(diff(level_median[0]),'r--',lw=2)
+    
+    subplot(313)
+    
+    plot(power_median[0][:-1]-diff(level_median[0]),'k-',lw=2)
+    #plot(cumsum(power_median[0][:-1])-cumsum(diff(level_median[0])),'r-',lw=2)
+    #plot(cumsum(power_median[0][:-1])+level_median[0][0]-level_median[0][:-1],'g-',lw=.5)
     
     savefig('TestFigure.png')
 

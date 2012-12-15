@@ -275,7 +275,7 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
     save_figure(savename)
 
 #    
-# plot_colored_import_export(year, data_nodes, datalabel='2011')
+# plot_colored_import_export(year, data_nodes, datalabel='Test')
 # plot_colored_import_export(year_cu, data_nodes_cu, datalabel='copper')
 #    
 def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, datalabel=''):
@@ -381,7 +381,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         save_figure(savename)
 
 #    
-# plot_colored_import_export(year, data, lapse=None)
+# plot_colored_import_export(year, data_nodes, lapse=None, datalabel='Test_2')
 #    
 # FOR NINGLING, MAY 2012:
 # plot_colored_import_export(year, data_nodes, datalabel='2011_mod')

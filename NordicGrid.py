@@ -98,7 +98,7 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
             #Calculate flows
             
             N,F = aures_solve(N, path=path_settings, copper=copper, h0=h0, b=b, lapse=lapse, squaremin=squaremin, maxb=maxb)
-            
+            #GurobiError
             #### DOES NOT WORK YET!!!
             if add_color:
                 #N.add_colored_import(F,lapse=lapse)

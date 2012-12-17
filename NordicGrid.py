@@ -290,6 +290,8 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
 # plot_colored_import_export(year_cu, data_nodes_cu, datalabel='copper')
 #    
 def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, datalabel=''):
+    """ (almost) Updated to use EuropeanGridR. NOTE: If balancing is shared, this function may need an update."""
+    
     region_names = ['NO','SE','DK-W','DK-E','DE-N']
     Nodes = data[0]
 
@@ -309,21 +311,24 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
             for j in arange(len(Nodes)):
                 colored_export_av[i][j] = mean(data[i][j].get_colored_import()[node_id][:lapse])/data[i][node_id].mean
 
-        ## Set plot options	##
-        matplotlib.rcParams['font.size'] = 10
-
         close(1); figure(1); clf()
-
-        gcf().set_dpi(300)
+        
+        ## Set non-standard figure size.
         gcf().set_size_inches([5.25,3.5])
 
         ## Plot import ##
         subplot(211)
 
         pp = []; pp_text=[]
+        
+        ## Plot first country.
         fill_between(year,cumsum(colored_import_av,axis=1).transpose()[0],color=colors[0],edgecolor='k',lw=.5)
+        
+        ## Add legend entry.
         pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
         pp_text.append(region_names[0])
+        
+        ## Plot all other countries.
         for i in arange(1,len(Nodes)):
             fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i],cumsum(colored_import_av,axis=1).transpose()[i-1],label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
             
@@ -331,11 +336,13 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
+        ## Remove own id from legend.
         pp.pop(node_id); pp_text.pop(node_id)
+        
+        ## Plot legend (in reverse order.)
         leg = legend(tuple(pp[::-1]),tuple(pp_text[::-1]),loc='upper left',title=region_names[node_id]+' - import')
-        ltext  = leg.get_texts();
-        setp(ltext, fontsize='small')    # the legend text fontsize
-
+        
+        ## Set ticks
         x = amax(cumsum(colored_import_av,axis=1).transpose()[len(Nodes)-1])
         dx = 10**floor(log10(x))
         if 5*dx<x:
@@ -349,29 +356,36 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         xlabel('Reference year')
         ylabel('Power [av.l.h.]')
         
-        #majorFormatter = matplotlib.ticker.ScalarFormatter(useMathText=True)#FormatStrFormatter('%.1f')
-        #majorFormatter.set_powerlimits((0, 0))
-        #gca().yaxis.set_major_formatter(majorFormatter)
-        
-        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+        ## Include real units on secondary y-axis.
+        add_duplicate_yaxis(gcf(),unit_multiplier=Nodes[node_id].mean,label='[MW]',tickFormatStr='%.0f')
 
         ## Plot export ##
         subplot(212)
         
         pp = []; pp_text=[]
+        
+        ## Plot first country.
         fill_between(year,cumsum(colored_export_av,axis=1).transpose()[0],color=colors[0],edgecolor='k',lw=.5)
+        
+        ## Add legend entry.
         pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[0]))
         pp_text.append(region_names[0])
+        
+        ## Plot all other countries.
         for i in arange(1,len(Nodes)):
             fill_between(year,cumsum(colored_export_av,axis=1).transpose()[i],cumsum(colored_export_av,axis=1).transpose()[i-1],label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
+            
+            ## Add legend entry.
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
+        ## Remove own id from legend.
         pp.pop(node_id); pp_text.pop(node_id)
+        
+        ## Plot legend (in reverse order.)
         leg = legend(tuple(pp[::-1]),tuple(pp_text[::-1]),loc='upper left',title=region_names[node_id]+' - export')
-        ltext  = leg.get_texts();
-        setp(ltext, fontsize='small')    # the legend text fontsize
-
+        
+        ## Set ticks
         x = amax(cumsum(colored_export_av,axis=1).transpose()[len(Nodes)-1])
         dx = 10**floor(log10(x))
         if 5*dx<x:
@@ -385,11 +399,8 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         xlabel('Reference year')
         ylabel('Power [av.l.h.]')
         
-        #majorFormatter = matplotlib.ticker.ScalarFormatter(useMathText=True)#FormatStrFormatter('%.1f')
-        #majorFormatter.set_powerlimits((0, 0))
-        #gca().yaxis.set_major_formatter(majorFormatter)
-        
-        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+        ## Include real units on secondary y-axis.
+        add_duplicate_yaxis(gcf(),unit_multiplier=Nodes[node_id].load.mean,label='[MW]',tickFormatStr='%.0f')
         
         tight_layout(pad=.5)
         savename = 'plot_colored_import_export_' + region_names[node_id] + '_' + datalabel + '.pdf'

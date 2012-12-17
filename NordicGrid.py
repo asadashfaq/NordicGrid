@@ -184,7 +184,7 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 #   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None)
 #
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
-    """ (almost) Updated to use EuropeanGridR."""
+    """ (almost) Updated to use EuropeanGridR. NOTE: If balancing is shared, this function may need an update."""
 
     N = data_nodes[0]
     region_name = ['Norway','Sweden','Denmark West','Denmark East','Germany North']
@@ -200,13 +200,24 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
             load_sum = load_sum + node.mean
             gross_share_ = gross_share_ + node.gamma*node.mean
             
-            #Power used locally
+            ## Power used locally ##
+            
+            ## Own RES used locally + import from friends.
             RES_local_av_ = RES_local_av_ + node.get_localRES()[:lapse].mean() + sum(node.get_colored_import()[find([id in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
+            
+            ## Own balancing
+            ## NOTE: If balancing is shared, this may have to change.
             balancing_av_ = balancing_av_ + node.get_localBalancing()[:lapse].mean()
+            
+            ## Import from not-friends.
             import_av_ = import_av_ + sum(node.get_colored_import()[find([id not in node_id for id in arange(len(N))])],axis=0)[:lapse].mean()
             
-            #Power not used locally
+            ## Power not used locally ##
+            
+            ## Own RES curtailed.
             curtailment_av_ = curtailment_av_ + node.curtailment[:lapse].mean()
+            
+            ## Own export - export to friends.
             export_av_ = export_av_ + (node.get_export() - sum(node.get_colored_import()[find([id in node_id for id in arange(len(N))])],axis=0))[:lapse].mean()
             
         #Normalize all
@@ -287,18 +298,18 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
 
     for node_id in arange(len(Nodes)):
 
-        #Calculate average import
+        ## Calculate average import
         colored_import_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
             colored_import_av[i] = mean(data[i][node_id].get_colored_import().transpose()[:lapse], axis=0)/data[i][node_id].mean
 
-        #Calculate export
+        ## Calculate export
         colored_export_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
             for j in arange(len(Nodes)):
-                colored_export_av[i][j] = mean(data[i][j].get_colored_import()[node_id])/data[i][node_id].mean
+                colored_export_av[i][j] = mean(data[i][j].get_colored_import()[node_id][:lapse])/data[i][node_id].mean
 
-        #Set plot options	
+        ## Set plot options	##
         matplotlib.rcParams['font.size'] = 10
 
         close(1); figure(1); clf()
@@ -306,6 +317,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         gcf().set_dpi(300)
         gcf().set_size_inches([5.25,3.5])
 
+        ## Plot import ##
         subplot(211)
 
         pp = []; pp_text=[]
@@ -314,6 +326,8 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         pp_text.append(region_names[0])
         for i in arange(1,len(Nodes)):
             fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i],cumsum(colored_import_av,axis=1).transpose()[i-1],label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
+            
+            ## Add legend entry.
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
@@ -341,6 +355,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         
         add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
 
+        ## Plot export ##
         subplot(212)
         
         pp = []; pp_text=[]
@@ -396,18 +411,18 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
 
     for node_id in arange(len(Nodes)):
 
-        #Calculate average import
+        ## Calculate average import
         colored_import_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
             colored_import_av[i] = mean(data[i][node_id].get_colored_import().transpose()[:lapse], axis=0)/data[i][node_id].mean
 
-        #Calculate export
+        ## Calculate export
         colored_export_av = zeros((len(year),len(Nodes)))
         for	i in arange(len(year)):
             for j in arange(len(Nodes)):
                 colored_export_av[i][j] = mean(data[i][j].get_colored_import()[node_id])/data[i][node_id].mean
 
-        #Set plot options	
+        ## Set plot options	##
         matplotlib.rcParams['font.size'] = 10
 
         figure(1); clf()
@@ -415,6 +430,7 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         gcf().set_dpi(300)
         gcf().set_size_inches([5.25,3.5])
 
+        ## Plot import figure ##
         subplot(211)
 
         envelope = cumsum(colored_import_av,axis=1).transpose()[-1]
@@ -425,9 +441,12 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         pp_text.append(region_names[0])
         for i in arange(1,len(Nodes)):
             fill_between(year,cumsum(colored_import_av,axis=1).transpose()[i]/envelope,cumsum(colored_import_av,axis=1).transpose()[i-1]/envelope,label=region_names[i],color=colors[i],edgecolor='k',lw=.5)
+            
+            ## Add legend entry.
             pp.append(Rectangle((0, 0), 1, 1, facecolor=colors[i]))
             pp_text.append(region_names[i])
 
+        ## Plot lines
         plot(year,envelope,'k-',lw=3)
 
         pp.pop(node_id); pp_text.pop(node_id)

@@ -286,7 +286,7 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
     save_figure(savename)
 
 #    
-# plot_colored_import_export(year, data_nodes, datalabel='Test')
+# plot_colored_import_export(year, data_nodes, datalabel='2011')
 # plot_colored_import_export(year_cu, data_nodes_cu, datalabel='copper')
 #    
 def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, datalabel=''):
@@ -400,7 +400,7 @@ def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, 
         ylabel('Power [av.l.h.]')
         
         ## Include real units on secondary y-axis.
-        add_duplicate_yaxis(gcf(),unit_multiplier=Nodes[node_id].load.mean,label='[MW]',tickFormatStr='%.0f')
+        add_duplicate_yaxis(gcf(),unit_multiplier=Nodes[node_id].mean,label='[MW]',tickFormatStr='%.0f')
         
         tight_layout(pad=.5)
         savename = 'plot_colored_import_export_' + region_names[node_id] + '_' + datalabel + '.pdf'
@@ -482,7 +482,7 @@ def plot_colored_import_export_alt(year, data, colors=colors_countries, lapse=No
         #majorFormatter.set_powerlimits((0, 0))
         #gca().yaxis.set_major_formatter(majorFormatter)
         
-        add_duplicate_yaxis(gcf(),unit_multiplier=mean(Nodes[node_id].load),label='[MW]',tickFormatStr='%.0f')
+        add_duplicate_yaxis(gcf(),unit_multiplier=Nodes[node_id].mean,label='[MW]',tickFormatStr='%.0f')
 
         subplot(212)
         

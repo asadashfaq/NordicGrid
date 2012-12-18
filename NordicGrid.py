@@ -54,6 +54,7 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
     
     Gamma = get_basepath_gamma(year)
     
+    data_nodes, data_flows = [], []
     for i in arange(len(year)):
         N.set_gammas(Gamma.transpose()[i])
         N.set_alphas([1.,1.,1.,1.,.9])

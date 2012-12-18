@@ -101,7 +101,9 @@ def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows):
     close(1); figure(1)
     
     subplot(211)
-    plot(ess.get_level(),label='State of charge')
+    plot(ess.get_level(),'k-',label='State of charge')
+    plot(ess.virtual_two_way_storage.median_level,'k--',label='Median level')
+    plot(ess.virtual_two_way_storage.min_level,'r-',label='Min level')
     
     axis(xmin=0,xmax=24*365*8,ymin=0,ymax=ess.volume)
     legend()
@@ -110,7 +112,7 @@ def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows):
          
     plot(n.mismatch,label='Local mismatch')
     plot(diff(ess.get_level()),label='Storage chargeing')
-    plot(ess.virtual_two_way_storage.get_default_charge,label='Default chargeing')
+    plot(ess.virtual_two_way_storage.default_charge,label='Default chargeing')
     
     axis(xmin=0,xmax=24*365*8)
     legend()

@@ -70,7 +70,6 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
         
         SoC_0 = 0.75
         
-        print P_out, volume, SoC_0, inflow, median_level
         N[0].add_hydro_storage_lake(P_out, volume, SoC_0, inflow, median_level)
         
         Gamma = get_basepath_gamma(year)
@@ -92,10 +91,10 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
 
     return year, data_nodes, data_flows
    
-def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows):
+def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows, N_id=0, n_id=0, label=''):
 
-    N = data_nodes[0]
-    n = N[0]
+    N = data_nodes[N_id]
+    n = N[n_id]
     ess = n.ESS.all_ess[0]
     
     close(1); figure(1)
@@ -118,7 +117,7 @@ def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows):
     legend()
     
     tight_layout()
-    savename = 'plot_test_NordicGrid_hydro_storage.pdf'
+    savename = 'plot_test_NordicGrid_hydro_storage'+label+'.pdf'
     save_figure(savename)                                                                     
                                                                                                                                                                                               
 #

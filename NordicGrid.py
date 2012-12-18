@@ -91,7 +91,34 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
         data_flows.append(deepcopy(F))
 
     return year, data_nodes, data_flows
-                            
+   
+def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows):
+
+    N = data_nodes[0]
+    n = N[0]
+    ess = n.ESS.all_ess[0]
+    
+    close(1); figure(1)
+    
+    subplot(211)
+    plot(ess.get_level(),label='State of charge')
+    
+    axis(xmin=0,xmax=24*365*8,ymin=0,ymax=ess.volume)
+    legend()
+    
+    subplot(212)
+         
+    plot(n.mismatch,label='Local mismatch')
+    plot(diff(ess.get_level()),label='Storage chargeing')
+    plot(ess.virtual_two_way_storage.get_default_charge,label='Default chargeing')
+    
+    axis(xmin=0,xmax=24*365*8)
+    legend()
+    
+    tight_layout()
+    savename = 'plot_test_NordicGrid_hydro_storage.pdf'
+    save_figure(savename)                                                                     
+                                                                                                                                                                                              
 #
 #   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=365*24,path_nodes='./output_data/test/')
 #

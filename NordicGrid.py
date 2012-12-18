@@ -22,6 +22,7 @@ from auresc import Nodes
 from colourutils import track_imports
 from shortcuts import *
 from SingleCountry import get_ISET_country_data, get_balancing
+from water import get_inflow, get_median_storage_level_Norway, get_median_storage_power_Norway
 
 #Colors. To be placed somewhere else
 colors_countries = ['#00A0B0','#6A4A3C','#CC333F','#EB6841','#EDC951'] #Ocean Five from COLOURlovers.
@@ -50,7 +51,22 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
     N = Nodes(admat=admat,path=path_data,files=files_data)
     
     ## Set hydro storage in Norway (node 0):
-    N[0].add_storage(P_in=.5, P_out=.5, volume=24*7*.5, SoC_0=0.5)
+    # N[0].add_storage(P_in=.5, P_out=.5, volume=24*7*.5, SoC_0=0.5)
+    P_out = 30e3/N[0].mean
+    volume = 80e6/(P_out*N[0].mean)
+    
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
+    inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True)
+    inflow = inflow/N[0].mean
+    
+    median_level = volume*get_median_storage_power_Norway(returnall=True)[2][0]
+    median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
+    median_level = copy(median_level[0:len(t)])
+    
+    SoC_0 = 0.75
+    
+    print P_out, volume, SoC_0, inflow, median_level
+    N[0].add_hydro_storage_lake(P_out, volume, SoC_0, inflow, median_level)
     
     Gamma = get_basepath_gamma(year)
     

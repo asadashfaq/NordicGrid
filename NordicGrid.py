@@ -47,31 +47,34 @@ color_edge = (.2,.2,.2)
 #
 def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True, add_color=False):
 
-    ## Initialize nodes: ##
-    N = Nodes(admat=admat,path=path_data,files=files_data)
-    
-    ## Set hydro storage in Norway (node 0):
-    # N[0].add_storage(P_in=.5, P_out=.5, volume=24*7*.5, SoC_0=0.5)
-    P_out = 30e3/N[0].mean
-    volume = 80e6/(P_out*N[0].mean)
-    
-    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
-    inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
-    inflow = 1e3*inflow/N[0].mean ## 1e3 converts from GW to MW.
-    
-    median_level = volume*get_median_storage_power_Norway(returnall=True)[2][0]
-    median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
-    median_level = copy(median_level[0:len(t)])
-    
-    SoC_0 = 0.75
-    
-    print P_out, volume, SoC_0, inflow, median_level
-    N[0].add_hydro_storage_lake(P_out, volume, SoC_0, inflow, median_level)
-    
-    Gamma = get_basepath_gamma(year)
-    
+    ## NOTE: cheap way to reset storage between years. Fix later.
     data_nodes, data_flows = [], []
     for i in arange(len(year)):
+
+        ## Initialize nodes: ##
+        N = None ## Just to make sure. Remove later.
+        N = Nodes(admat=admat,path=path_data,files=files_data)
+        
+        ## Set hydro storage in Norway (node 0):
+        # N[0].add_storage(P_in=.5, P_out=.5, volume=24*7*.5, SoC_0=0.5)
+        P_out = 30e3/N[0].mean
+        volume = 80e6/(P_out*N[0].mean)
+        
+        t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
+        inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
+        inflow = 1e3*inflow/N[0].mean ## 1e3 converts from GW to MW.
+        
+        median_level = get_median_storage_power_Norway(returnall=True)[2][0]
+        median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
+        median_level = copy(median_level[0:len(t)])
+        
+        SoC_0 = 0.75
+        
+        print P_out, volume, SoC_0, inflow, median_level
+        N[0].add_hydro_storage_lake(P_out, volume, SoC_0, inflow, median_level)
+        
+        Gamma = get_basepath_gamma(year)
+        
         N.set_gammas(Gamma.transpose()[i])
         N.set_alphas([1.,1.,1.,1.,.9])
         print 'Gamma: ' + str(Gamma.transpose()[i])

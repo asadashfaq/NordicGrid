@@ -56,8 +56,8 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
     volume = 80e6/(P_out*N[0].mean)
     
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
-    inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True)
-    inflow = inflow/N[0].mean
+    inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
+    inflow = 1e3*inflow/N[0].mean ## 1e3 converts from GW to MW.
     
     median_level = volume*get_median_storage_power_Norway(returnall=True)[2][0]
     median_level = kron(ones(ceil(len(t)/365./24.)),median_level)

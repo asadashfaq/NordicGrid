@@ -43,7 +43,9 @@ color_edge = (.2,.2,.2)
 
 
 #
-# year, data_nodes, data_flows = test_NordicGrid_hydro_storage()
+#   year, data_nodes, data_flows = test_NordicGrid_hydro_storage()
+#
+#   year, data_nodes, data_flows = test_NordicGrid_hydro_storage(year=linspace(1985,2053,21),path_nodes='./output_data/2011_storage/',add_color=True)
 #
 def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True, add_color=False):
 
@@ -88,6 +90,15 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
         ## Append data
         data_nodes.append(deepcopy(N))
         data_flows.append(deepcopy(F))
+        
+        ## Save nodes
+        nodes_filename = 'nodes_year_'+str(year[i])
+        flows_filename = 'flows_year_'+str(year[i])
+            
+        N.save_nodes(nodes_filename,path=path_nodes)
+        np.save(path_nodes+flows_filename,F)
+
+        plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows, N_id=i, label=nodes_filename)
 
     return year, data_nodes, data_flows
    
@@ -170,8 +181,11 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
             
             try:
                 N,F = aures_solve(N, path=path_settings, copper=copper, h0=h0, b=b, lapse=lapse, squaremin=squaremin, maxb=maxb)
-            except GurobiError:
+            except:
                 N.set_gammas(Gamma.transpose()[i] + 0.01*rand(len(Gamma.transpose()[i])))
+                print "WARNING!! Trying a new set of gammas for the same year."
+                print 'Gamma: ' + str(Gamma.transpose()[i])
+                
                 N,F = aures_solve(N, path=path_settings, copper=copper, h0=h0, b=b, lapse=lapse, squaremin=squaremin, maxb=maxb)
                 
             if add_color:

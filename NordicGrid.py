@@ -41,14 +41,35 @@ color_edge = (.2,.2,.2)
 #color_RES = (0.4,.65,0.25)
 
 
-def test_new_flow_calc(lapse=None):
 
-    N = Nodes(admat='./settings/admat_2011.txt',path='./data/',files=['ISET_NordicGrid_DE-N.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_SE.npz','ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_NO.npz'])
-    
-    N,F = aures_solve(N, lapse=lapse)
-    
-    return N, F
+def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True, add_color=False):
 
+    ## Initialize nodes: ##
+    N = Nodes(admat=admat,path=path_data,files=files_data)
+    
+    ## Set hydro storage in Norway (node 0):
+    N[0].add_storage(self, P_in=.5, P_out=.5, volume=24*7*.5, SoC_0=0.5)
+    
+    Gamma = get_basepath_gamma(year)
+    
+    for i in arange(len(year)):
+        N.set_gammas(Gamma.transpose()[i])
+        N.set_alphas([1.,1.,1.,1.,.9])
+        print 'Gamma: ' + str(Gamma.transpose()[i])
+ 
+        N,F = aures_solve(N, path=path_settings, copper=copper, h0=h0, b=b, lapse=lapse, squaremin=squaremin, maxb=maxb)
+ 
+        if add_color:
+            
+            N = track_imports(N,F,admat=admat,lapse=lapse)
+            print 'Added color.'
+
+        ## Append data
+        data_nodes.append(deepcopy(N))
+        data_flows.append(deepcopy(F))
+
+    return year, data_nodes, data_flows
+                            
 #
 #   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=365*24,path_nodes='./output_data/test/')
 #

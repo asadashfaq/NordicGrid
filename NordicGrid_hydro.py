@@ -13,7 +13,8 @@ import os, sys
 
 ## Custom modules and functions
 sys.path.append( './zdcpf/' ) #This can be done in a more fancy way using __init__.py or some such.
-from zdcpf_storage import one_way_storage
+sys.path.append( './EuropeanGridR/' )
+from storage_classes import one_way_storage
 from water import get_inflow, get_median_storage_level_Norway, get_median_storage_power_Norway
 from shortcuts import *
 from SingleCountry import get_ISET_country_data

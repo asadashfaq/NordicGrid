@@ -42,6 +42,44 @@ color_edge = (.2,.2,.2)
 #color_RES = (0.4,.65,0.25)
 
 
+def build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False):
+
+    path_data='./data/'
+    files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz']
+
+    N = Nodes(admat=admat,path=path_data,files=files_data)
+    
+    if storage:
+        
+        ## Set hydro storage in Norway (node 0):
+        
+        P_out = 30e3/N[0].mean
+        volume = 80e6/(P_out*N[0].mean)
+        
+        t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
+        inflow_NO, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
+        inflow_NO = 1e3*inflow_NO/N[0].mean ## 1e3 converts from GW to MW.
+        
+        median_level = get_median_storage_power_Norway(returnall=True)[2][0]
+        median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
+        median_level = copy(median_level[0:len(t)])
+        
+        SoC_0 = median_level[0]
+        
+        N[0].add_hydro_storage_lake(P_out, volume, SoC_0, inflow_NO, median_level) 
+
+        ## Set hydro storage in Sweden (node 1):
+        ## NOTE: Sweden is asumed to be a scaled down version of Norway.
+        
+        inflow_SE = inflow_NO/2.
+        P_out_SE = P_out/2.
+        
+        N[1].add_hydro_storage_lake(P_out_SE, volume, SoC_0, inflow_SE, median_level) 
+
+
+
+   return N
+
 #
 #   year, data_nodes, data_flows = test_NordicGrid_hydro_storage()
 #
@@ -70,7 +108,7 @@ def test_NordicGrid_hydro_storage(year=[2011],path_nodes='./output_data/',admat=
         median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
         median_level = copy(median_level[0:len(t)])
         
-        SoC_0 = 0.75
+        SoC_0 = median_level[0]
         
         N[0].add_hydro_storage_lake(P_out, volume, SoC_0, inflow, median_level)
         
@@ -130,18 +168,34 @@ def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows, N_id=0, n_i
     tight_layout()
     savename = 'plot_test_NordicGrid_hydro_storage'+label+'.pdf'
     save_figure(savename)                                                                     
-                                                                                                                                                                                              
+
+ 
+
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,5),lapse=365*24,path_nodes='./output_data/test/')
+#                                                                                                                                                                                                   
+## 2011 with storage lakes
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21)[2:14],lapse=None,path_nodes='./output_data/test/')
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=True))
 #
-def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True):
+## 2011 without storage lakes
+#
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False))
+#                                                                                                                                                                                                   
+## Cu with storage lakes
+#
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=True),copper=1)
+#
+## Cu without storage lakes
+#
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False),copper=1)
+#
+def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True, N_0=None):
     
     """ (almost) Updated to use EuropeanGridR."""
 
     #Initialize
-    N = Nodes(admat=admat,path=path_data,files=files_data)
+    if N_0==None:
+        N_0 = Nodes(admat=admat,path=path_data,files=files_data)
     
     Gamma = get_basepath_gamma(year)
     dirList = os.listdir(path_nodes)
@@ -150,6 +204,9 @@ def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,pat
     for i in arange(len(year)):
         print 'Year: {0:.0f}'.format(year[i])
         sys.stdout.flush()
+
+        ## Reset nodes object to the initial unsolved object.
+        N = deepcopy(N_0)
 
         nodes_filename = 'nodes_year_'+str(year[i])
         flows_filename = 'flows_year_'+str(year[i])
@@ -269,7 +326,8 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 
 ##New version
 #
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None)
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_2011_storage')
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_2011_storage',node_id=[0])
 #
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
     """ (almost) Updated to use EuropeanGridR. NOTE: If balancing is shared, this function may need an update."""
@@ -374,6 +432,7 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
     save_figure(savename)
 
 #    
+# plot_colored_import_export(year, data_nodes, datalabel='2011_storage')
 # plot_colored_import_export(year, data_nodes, datalabel='2011')
 # plot_colored_import_export(year_cu, data_nodes_cu, datalabel='copper')
 #    

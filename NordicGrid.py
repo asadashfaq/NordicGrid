@@ -58,6 +58,7 @@ def build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False):
         
         t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
         inflow_NO, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
+        
         inflow_NO = 1e3*inflow_NO/N[0].mean ## 1e3 converts from GW to MW.
         
         median_level = get_median_storage_power_Norway(returnall=True)[2][0]
@@ -332,12 +333,12 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 
 ##New version
 #
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_cu')
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_cu',node_id=[0])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_cu',node_id=[1])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_cu',node_id=[2])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_cu',node_id=[3])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_cu',node_id=[4])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_cu_storage')
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_cu_storage',node_id=[0])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_cu_storage',node_id=[1])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_cu_storage',node_id=[2])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_cu_storage',node_id=[3])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_cu_storage',node_id=[4])
 
 #
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
@@ -407,7 +408,7 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
     pp_export = Rectangle((0, 0), 1, 1, facecolor=color_export)
     pp_curtailment = Rectangle((0, 0), 1, 1, facecolor=color_curtailment)
 
-    axis(ymin=0, ymax =1.55, xmin=amin(year), xmax=amax(year))
+    axis(ymin=0, ymax =1.65, xmin=amin(year), xmax=amax(year))
     yticks(arange(0,1.55,.25))
     xlabel('Reference year')
     ylabel('Power [av.l.h.]')
@@ -446,6 +447,7 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
 # plot_colored_import_export(year, data_nodes, datalabel='2011_storage')
 # plot_colored_import_export(year, data_nodes, datalabel='2011')
 # plot_colored_import_export(year, data_nodes, datalabel='cu')
+# plot_colored_import_export(year, data_nodes, datalabel='cu_storage')
 #    
 def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, datalabel=''):
     """ (almost) Updated to use EuropeanGridR. NOTE: If balancing is shared, this function may need an update."""

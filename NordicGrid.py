@@ -71,10 +71,16 @@ def build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False):
         ## Set hydro storage in Sweden (node 1):
         ## NOTE: Sweden is asumed to be a scaled down version of Norway.
         
-        inflow_SE = inflow_NO/2.
-        P_out_SE = P_out/2.
+        ## From: http://www.svenskvattenkraft.se
+        ## Volume of reservoir: 33675e3 MWh
+        ## Total power: 16250 MW (1050 MW is small hydro)
+        ## Total annual production: 65 TWh (4.6 TWh is small hydro)
         
-        N[1].add_hydro_storage_lake(P_out_SE, volume, SoC_0, inflow_SE, median_level) 
+        inflow_SE = 0.55*inflow_NO
+        P_out_SE = 16250/N[1].mean ## 55% of Norway
+        volume_SE = 33675e3/(P_out_SE*N[1].mean) ## 42% of Norway
+        
+        N[1].add_hydro_storage_lake(P_out_SE, volume_SE, SoC_0, inflow_SE, median_level) 
 
 
 
@@ -175,19 +181,19 @@ def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows, N_id=0, n_i
 #                                                                                                                                                                                                   
 ## 2011 with storage lakes
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=True))
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=True),add_color=True)
 #
-## 2011 without storage lakes
+## 2011 without storage lakes: OK
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False))
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False),add_color=True)
 #                                                                                                                                                                                                   
 ## Cu with storage lakes
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=True),copper=1)
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/cu_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=True),copper=1,add_color=True)
 #
 ## Cu without storage lakes
 #
-#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011_storage/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False),copper=1)
+#   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/cu/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False),copper=1,add_color=True)
 #
 def get_nodes_and_flows_vs_year(year=linspace(1985,2053,21), add_color=False,path_nodes='./output_data/',admat='./settings/admat_2011.txt',path_data='./data/',files_data=['ISET_NordicGrid_NO.npz', 'ISET_NordicGrid_SE.npz', 'ISET_NordicGrid_DK-W.npz', 'ISET_NordicGrid_DK-E.npz', 'ISET_NordicGrid_DE-N.npz'], path_settings='./settings/',copper=0, h0=None, b=1.0, lapse=None, squaremin=False, maxb=True, N_0=None):
     
@@ -326,12 +332,12 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 
 ##New version
 #
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_2011_storage')
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_2011_storage',node_id=[0])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_2011_storage',node_id=[1])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_2011_storage',node_id=[2])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_2011_storage',node_id=[3])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_2011_storage',node_id=[4])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_cu')
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_cu',node_id=[0])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_cu',node_id=[1])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_cu',node_id=[2])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_cu',node_id=[3])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_cu',node_id=[4])
 
 #
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
@@ -439,7 +445,7 @@ def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,
 #    
 # plot_colored_import_export(year, data_nodes, datalabel='2011_storage')
 # plot_colored_import_export(year, data_nodes, datalabel='2011')
-# plot_colored_import_export(year_cu, data_nodes_cu, datalabel='copper')
+# plot_colored_import_export(year, data_nodes, datalabel='cu')
 #    
 def plot_colored_import_export(year, data, colors=colors_countries, lapse=None, datalabel=''):
     """ (almost) Updated to use EuropeanGridR. NOTE: If balancing is shared, this function may need an update."""

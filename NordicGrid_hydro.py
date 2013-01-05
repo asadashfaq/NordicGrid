@@ -109,7 +109,7 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alph
     
     #mismatch = mismatch + balancing(x_bal)
     balancing = deficit/len(t)*ones_like(t)
-    mismatch = mismatch - balancing
+    mismatch = mismatch - balancing - 0.022*mean(L) 
     print 'Mismatch sum (after balancing): ' + str(sum(mismatch))
     
     mismatch_r = zeros_like(mismatch)
@@ -171,12 +171,9 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alph
     #for i in arange(len(storage_level_real)):
     #    storage_level_real[i] = storage_level_real_[mod(i,len(storage_level_real_))]
     plot(t,storage_level/volume,'k-',label='Historical level')
-    plot(t,median_level/volume,'k--',label='Median level')
+    plot(t,storage_lake.virtual_two_way_storage.median_level/volume,'k--',label='Median level')
     
-    min_level = zeros_like(median_level)
-    for i in arange(len(median_level)):
-        min_level[i] = -amin(median_level - median_level[i])
-    plot(t,min_level/volume,'r-',label='Min level')
+    plot(t,storage_lake.virtual_two_way_storage.min_level/volume,'r-',label='Min level')
             
     xlabel('Time [h]')
     ylabel('Storage filling fraction')
@@ -189,4 +186,15 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alph
     save_file_name = 'plot_isolated_Norway.png'
     save_figure(save_file_name)    
     
+    close(1);figure(1);clf()
+    
+    subplot(211)
+    plot(t,mismatch-storage_lake.virtual_two_way_storage.default_charge)
+    
+    subplot(212)
+    hist(mismatch-storage_lake.virtual_two_way_storage.default_charge,25)
+    
+    tight_layout()
+    save_file_name = 'plot_isolated_Norway_2.png'
+    save_figure(save_file_name)
     

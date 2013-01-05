@@ -27,18 +27,46 @@ from scipy.optimize import brentq
 figure_size = [6.5,4.3]
 
 
-def plot_inflow(t=arange(365*24)):
+def plot_inflow_Norway(t=arange(365*24)):
 
-    inflow, inflow_basic = get_inflow(t,returnall=True)
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
+    datetime_offset = datetime_offset
+    inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True)
+
+    year = array([h.year for h in num2date(t+datetime_offset-1/24.)])
+    
+    inflow_year = zeros_like(inflow)
+    for y in unique(year):
+        inflow_year[year==y] = mean(inflow[year==y])
 
     ### Plot inflow
     close(1);figure(1);clf()
 
-    plot(inflow)
-    plot(inflow_basic)
+    fill_between(t,inflow_year,edgecolor=None,lw=0,facecolor=(.8,.8,.8),label='Annual average')
+    pp_inflow_year = Rectangle((0, 0), 1, 1, facecolor=(.8,.8,.8),lw=0)
+    
+    plot(t,inflow,'k-',label='Historical values')
+    pp_inflow = Line2D([0,1], [0,0], color='k',ls='-')
+
+    axhline(mean(inflow),ls='--',color='k',label='Average')
+    pp_inflow_mean = Line2D([0,1], [0,0], color='k',ls='--')
+    
+    
+    ylabel('Hourly inflow to reservoirs [GW]')
+    
+    t_min = amin(t)
+    t_max = amax(t)
+    
+    axis(xmin=t_min,xmax=t_max,ymin=0)
+    
+    xticks(t[1+find(diff(year))],year[1+find(diff(year))],rotation=-45,ha='left')
+    
+    pp = [pp_inflow,pp_inflow_year,pp_inflow_mean]
+    pp_text = ['Historical values','Annual average','Average']
+    legend(pp,pp_text)
     
     tight_layout()
-    save_file_name = 'plot_inflow.pdf'
+    save_file_name = 'plot_inflow_Norway.pdf'
     save_figure(save_file_name)
     
 def plot_one_way_storage(t=None,volume=80e3,P_out=30,N=None):

@@ -22,6 +22,8 @@ from SingleCountry import get_ISET_country_data
 #Specific functions
 from scipy.optimize import brentq
 
+#Colors. To be placed somewhere else
+color_solar = (1.,0.8,0,1)
 
 ## Standard figure size:
 figure_size = [6.5,4.3]
@@ -137,6 +139,7 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alph
     
     #mismatch = mismatch + balancing(x_bal)
     balancing = deficit/len(t)*ones_like(t)
+    print 'Load incresed by: ' + str(100*(balancing[0] + 0.022*mean(L))/mean(L))
     mismatch = mismatch - balancing - 0.022*mean(L) 
     print 'Mismatch sum (after balancing): ' + str(sum(mismatch))
     
@@ -166,32 +169,57 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alph
     print ii, i
     print storage_lake.virtual_two_way_storage.level[:3], storage_lake.virtual_two_way_storage.level[-3:]
     
+    year = array([h.year for h in num2date(t+datetime_offset-1/24.)])
+    
+    
     close(1);figure(1);clf()
     
-    subplot(211)
-    plot(t,-storage_lake.virtual_two_way_storage.ekstra_discharge,'y-',label='Ekstra discharge')
-    plot(t,mismatch,label='Mismatch')
-    plot(t,mismatch_r,label='Mismatch_r')
-    fill_between(t,balancing,edgecolor=None,lw=0,facecolor='r')
+    fill_between(t,-get_positive(-(mismatch - mismatch_r)),edgecolor=None,lw=0,facecolor='r',alpha=0.5)
+    pp_discharge = Rectangle((0, 0), 1, 1, edgecolor=None,lw=0,facecolor='r',alpha=0.5)
     
-    plot(t,storage_lake.virtual_two_way_storage.power_cap_in,'k-',lw=.5,alpha=.5)
-    plot(t,-storage_lake.virtual_two_way_storage.power_cap_out,'k-',lw=.5,alpha=.5)
+    fill_between(t,get_positive(mismatch - mismatch_r),edgecolor=None,lw=0,facecolor='g',alpha=0.7)
+    pp_charge = Rectangle((0, 0), 1, 1, edgecolor=None,lw=0,facecolor='g',alpha=0.7)
     
-    plot(t,storage_lake.virtual_two_way_storage.default_charge,'k-',lw=.5,label='Default charge')
-    plot(t,storage_lake.virtual_two_way_storage.default_charge-volume*0.5/365./24,'k--',lw=.5,label='Default charge (offset)')
-    plot(t,storage_lake.virtual_two_way_storage.power_balance/volume*100,'r-',lw=.5,label='Power balance')
+    fill_between(t,-get_positive(-mismatch),-get_positive(-(mismatch - mismatch_r)),edgecolor=None,lw=0,facecolor='r')
+    pp_balancing = Rectangle((0, 0), 1, 1, edgecolor=None,lw=0,facecolor='r')
+    
+    #plot(t,mismatch,'k-',lw=.1,label='Mismatch')
+    
+    plot(t,storage_lake.virtual_two_way_storage.default_charge,color='k',lw=1,label='Default charge')
+    pp_default = Line2D([0,1], [0,0], color='k',ls='-')
+    
+    plot(t,storage_lake.virtual_two_way_storage.default_charge-storage_lake.virtual_two_way_storage.ekstra_discharge,'k-',alpha=0.5,label='Ekstra discharge')
+    pp_allowed = Line2D([0,1], [0,0], color='k',ls='-',alpha=0.5)
+    
+    #plot(t,mismatch_r,label='Mismatch_r')
+    #fill_between(t,balancing,edgecolor=None,lw=0,facecolor='r')
+    
+    #plot(t,storage_lake.virtual_two_way_storage.power_cap_in,'k-',lw=.5,alpha=.5)
+    #plot(t,-storage_lake.virtual_two_way_storage.power_cap_out,'k-',lw=.5,alpha=.5)
+    
+    #plot(t,storage_lake.virtual_two_way_storage.default_charge,'k-',lw=.5,label='Default charge')
+    #plot(t,storage_lake.virtual_two_way_storage.default_charge-volume*0.5/365./24,'k--',lw=.5,label='Default charge (offset)')
+    #plot(t,storage_lake.virtual_two_way_storage.power_balance/volume*100,'r-',lw=.5,label='Power balance')
     
     
-    xlabel('Time [h]')
-    ylabel('Power [GWh/h]')
+    ylabel('Hourly mismatch [GW]')
     
-    legend()
+    pp = [pp_charge,pp_discharge,pp_balancing,pp_default,pp_allowed]
+    pp_text = ['Charge','Discharge','Non-hydro balancing','Default charge/discharge','Allowed discharge']
+    legend(pp,pp_text,ncol=3,title='Norway (NO)')
     
-    axis(xmin=0,xmax=N_days,ymin=-30,ymax=30)
+    axis(xmin=0,xmax=N_days,ymin=-33,ymax=39)
     
-    subplot(212)
+    xticks(t[1+find(diff(year))],year[1+find(diff(year))],rotation=-45,ha='left')
+    
+    tight_layout()
+    save_file_name = 'plot_isolated_Norway_mismatch.png'
+    save_figure(save_file_name)
+    
+    close(1);figure(1);clf()
     
     fill_between(t,storage_lake.get_level()/volume,edgecolor=None,lw=0,facecolor='r',alpha=0.5,label='Prefilling')
+    pp_level = Rectangle((0, 0), 1, 1, edgecolor=None,lw=0,facecolor='r',alpha=0.5)
     
     ## Plot real storage levels
     #storage_level_real_=kron(np.genfromtxt('./raw_data/meannor'),ones(7*24))
@@ -199,20 +227,32 @@ def plot_isolated_Norway(ISO='NO',volume=80e3,P_out=30,N_days=4*365,gamma=0,alph
     #for i in arange(len(storage_level_real)):
     #    storage_level_real[i] = storage_level_real_[mod(i,len(storage_level_real_))]
     plot(t,storage_level/volume,'k-',label='Historical level')
-    plot(t,storage_lake.virtual_two_way_storage.median_level/volume,'k--',label='Median level')
+    pp_historical = Line2D([0,1], [0,0], color='k',ls='-')
     
-    plot(t,storage_lake.virtual_two_way_storage.min_level/volume,'r-',label='Min level')
-            
-    xlabel('Time [h]')
+    plot(t,storage_lake.virtual_two_way_storage.median_level/volume,'k--',label='Median level')
+    pp_median = Line2D([0,1], [0,0], color='k',ls='--')
+    
+    plot(t,storage_lake.virtual_two_way_storage.min_level/volume,'r-',label='Minimum level')
+    pp_min = Line2D([0,1], [0,0], color='r',ls='-')
+    
+    axhline(1,color=(.5,.5,.5))
+                    
     ylabel('Storage filling fraction')
     
-    legend()
+    pp = [pp_historical,pp_level,pp_median,pp_min]
+    pp_text = ['Historical level','Model level','Median level','Minimum level']
+    legend(pp,pp_text,ncol=2,title='Norway (NO)')
     
-    axis(xmin=0,xmax=N_days,ymin=0,ymax=1.)
+    xticks(t[1+find(diff(year))],year[1+find(diff(year))],rotation=-45,ha='left')
+    
+    axis(xmin=0,xmax=N_days,ymin=0,ymax=1.199)
     
     tight_layout()
-    save_file_name = 'plot_isolated_Norway.png'
+    save_file_name = 'plot_isolated_Norway_level.png'
     save_figure(save_file_name)    
+    
+    
+    
     
     close(1);figure(1);clf()
     

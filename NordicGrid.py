@@ -57,9 +57,9 @@ def build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False):
         volume = 80e6/(P_out*N[0].mean)
         
         t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data('NO')
-        inflow_NO, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
+        inflow, storage_level, t, datetime_offset = get_inflow(t,datetime_offset, returnall=True) ## NOTE: This function is using GW and not MW!
         
-        inflow_NO = 1e3*inflow_NO/N[0].mean ## 1e3 converts from GW to MW.
+        inflow_NO = 1e3*inflow/N[0].mean ## 1e3 converts from GW to MW.
         
         median_level = get_median_storage_power_Norway(returnall=True)[2][0]
         median_level = kron(ones(ceil(len(t)/365./24.)),median_level)
@@ -77,7 +77,7 @@ def build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False):
         ## Total power: 16250 MW (1050 MW is small hydro)
         ## Total annual production: 65 TWh (4.6 TWh is small hydro)
         
-        inflow_SE = 0.55*inflow_NO
+        inflow_SE = 0.55*inflow
         P_out_SE = 16250/N[1].mean ## 55% of Norway
         volume_SE = 33675e3/(P_out_SE*N[1].mean) ## 42% of Norway
         
@@ -333,12 +333,12 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 
 ##New version
 #
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_cu_storage')
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_cu_storage',node_id=[0])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_cu_storage',node_id=[1])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_cu_storage',node_id=[2])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_cu_storage',node_id=[3])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_cu_storage',node_id=[4])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_2011_storage')
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_2011_storage',node_id=[0])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_2011_storage',node_id=[1])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_2011_storage',node_id=[2])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_2011_storage',node_id=[3])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_2011_storage',node_id=[4])
 
 #
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):

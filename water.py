@@ -167,7 +167,7 @@ def plot_stuff(quantile=0.5):
     
     savefig('TestFigure.png')
 
-def get_inflow(t=None,datetime_offset=None, storage_capacity=80e3, returnall=False):
+def get_inflow(t=None,datetime_offset=None, storage_capacity=80e3, returnall=False, correction=1.04):
     """Estimated hourly inflow of water to the Norwigian storage lakes."""
     
     #Load data
@@ -185,6 +185,9 @@ def get_inflow(t=None,datetime_offset=None, storage_capacity=80e3, returnall=Fal
     
     inflow = get_positive(diff(storage_level) + L_week[:-1])
     inflow = concatenate([inflow,[inflow[-1]]])
+    
+    ## Correction for Norway's export of hydropower
+    inflow = correction*inflow
     
     if returnall:
         return inflow, storage_level, t, datetime_offset

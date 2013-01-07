@@ -77,7 +77,7 @@ def build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False):
         ## Total power: 16250 MW (1050 MW is small hydro)
         ## Total annual production: 65 TWh (4.6 TWh is small hydro)
         
-        inflow_SE = 0.55*inflow
+        inflow_SE = 1e3*inflow*65/125./N[1].mean ## 52% of Norway
         P_out_SE = 16250/N[1].mean ## 55% of Norway
         volume_SE = 33675e3/(P_out_SE*N[1].mean) ## 42% of Norway
         

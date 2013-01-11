@@ -41,6 +41,9 @@ def plot_inflow_Norway(t=arange(365*24)):
     for y in unique(year):
         inflow_year[year==y] = mean(inflow[year==y])
 
+        print 'Inflow ' + str(y)
+        print str(mean(inflow[year==y])/mean(inflow)) + '% '
+
     ### Plot inflow
     close(1);figure(1);clf()
 

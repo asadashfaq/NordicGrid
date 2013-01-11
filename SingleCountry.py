@@ -32,6 +32,8 @@ color_solar = (1.,.8,0.)
 bg_color = (.75,.0,.0)
 color_edge = (.4,.4,.4)
 color_opt = (0.53,0.73,0.37)
+golden_ratio = 1.61803399
+
 
 ## Standard figure size:
 figure_size = [6.5,4.3]
@@ -770,8 +772,31 @@ def get_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cy
     
     return CS_fit, P_in, P_out
 
+
+def get_color_and_linestyle(alpha_w,N_cycles):
+
+    ## Pick color
+    if alpha_w==None:
+        color = 'k'
+        mixtxt = ' (opt. mix)'
+    elif alpha_w==1:
+        color = color_wind
+        mixtxt = ' (wind-only)'
+    else:
+        color = 'g'
+
+    ## Pick line style
+    if N_cycles==50:
+        ls = '-'
+    elif N_cycles==100:
+        ls = ':'
+    else:
+        ls = '-.'
+
+    return color, ls, mixtxt
+
 ##
-# plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,21))
+# plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,5))
 #    
 def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), N_cycles=[50,100,200,50,100], gain=0.90, alpha_w=[None,None,None,1,1], eta_charge=1., eta_discharge=1., txtlabel='', savelabel=''):
 
@@ -797,105 +822,140 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
     
     ## Plot storage energy capacity build-up
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     for i in arange(len(N_cycles)):
         
-        ## Pick color
-        if alpha_w[i]==None:
-            color = 'k'
-            mixtxt = ' (opt. mix)'
-        elif alpha_w[i]==1:
-            color = color_wind
-            mixtxt = ' (wind-only)'
-        else:
-            color = 'g'
-            
-        ## Pick line style
-        if N_cycles[i]==50:
-            ls = '-'
-        elif N_cycles[i]==100:
-            ls = ':'
-        else:
-            ls = '-.'
-        
+        color, ls, mixtxt = get_color_and_linestyle(alpha_w[i],N_cycles[i])
+                
         label_ = '{0:.0f}'.format(N_cycles[i]) + mixtxt
         plot(gamma*annual_TWh,mean(L)*CS_fit_[i],color=color,ls=ls,label=label_)
 
     
     dx = 0.02*annual_TWh
-    plot_vertical_line_and_label(0.25*annual_TWh,15,r'25%',dx)
-    plot_vertical_line_and_label(0.5*annual_TWh,15,r'50%',dx)
-    plot_vertical_line_and_label(.75*annual_TWh,15,r'75%',dx)
-    plot_vertical_line_and_label(1.*annual_TWh,15,r'100%',dx)
+    y = 14*mean(L)/3.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
 
     xlabel('Wind plus solar energy [TWh/yr]')
     ylabel('Storage volume [GWh]')
 
-    #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
-    #ltext  = leg.get_texts();
-    #setp(ltext, fontsize='small')    # the legend text fontsize
-
     axis(xmin=0,xmax=amax(gamma)*mean(L)*365*24/1e3,ymin=0,ymax=14*mean(L))
 
-    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=2)
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=1)
 
     tight_layout()
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_EnergyCap_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
 
     
-    ## Plot charging and discharging capacities
+    ## Plot charging capacities
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     for i in arange(len(N_cycles)):
-        plot(gamma*annual_TWh,1e3*mean(L)*P_in_[i],ls='-',label=N_cycles[i])
-        plot(gamma*annual_TWh,1e3*mean(L)*P_out_[i],ls='--',label=N_cycles[i])
+        color, ls, mixtxt = get_color_and_linestyle(alpha_w[i],N_cycles[i])
+        label_ = '{0:.0f}'.format(N_cycles[i]) + mixtxt
+        
+        plot(gamma*annual_TWh,1e3*mean(L)*P_in_[i],color=color,ls=ls,label=label_)
 
     xlabel('Wind plus solar energy [TWh/yr]')
-    ylabel('Power [MW]')
+    ylabel('Charging power [MW]')
 
     dx = 0.02*annual_TWh
-    plot_vertical_line_and_label(0.25*annual_TWh,1000,r'25%',dx)
-    plot_vertical_line_and_label(0.5*annual_TWh,1000,r'50%',dx)
-    plot_vertical_line_and_label(.75*annual_TWh,1000,r'75%',dx)
-    plot_vertical_line_and_label(1.*annual_TWh,1000,r'100%',dx)
+    y = 2050/3.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
 
     axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=2050)
 
-    #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
-    #ltext  = leg.get_texts();
-    #setp(ltext, fontsize='small')    # the legend text fontsize
+    legend(loc='upper right',title=r'Cycle count [yr$^{-1}$]',ncol=1)
 
     tight_layout()
-    save_file_name = 'plot_storage_buildup_fixed_cycle_number_PowerCap_'+savelabel+'_'+ISO+'.pdf'
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_ChargingPower_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
-    
-    ## Plot charging and discharging capacities Vs energy capacity
+
+    ## Plot discharging capacities
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     for i in arange(len(N_cycles)):
-        plot(mean(L)*CS_fit_[i],1e3*mean(L)*P_in_[i],ls='-',label=N_cycles[i])
-        plot(mean(L)*CS_fit_[i],1e3*mean(L)*P_out_[i],ls='--',label=N_cycles[i])
+        color, ls, mixtxt = get_color_and_linestyle(alpha_w[i],N_cycles[i])
+        label_ = '{0:.0f}'.format(N_cycles[i]) + mixtxt
+        
+        plot(gamma*annual_TWh,1e3*mean(L)*P_out_[i],color=color,ls=ls,label=label_)
 
-    plot(mean(L)*CS_fit_[i],mean(L)*CS_fit_[i]*1e3,'k:')
+    xlabel('Wind plus solar energy [TWh/yr]')
+    ylabel('Discharging power [MW]')
 
-    xlabel('Storage volume [GWh]')
-    ylabel('Power [MW]')
+    dx = 0.02*annual_TWh
+    y = 2050/3.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
 
-    axis(xmin=0,ymin=0)
+    axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=2050)
 
-    #leg = legend(loc='upper left',ncol=2,title='Storage cycle number per year');
-    #ltext  = leg.get_texts();
-    #setp(ltext, fontsize='small')    # the legend text fontsize
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=1)
 
     tight_layout()
-    save_file_name = 'plot_storage_buildup_fixed_cycle_number_PowerCapVsEnergyCap_'+savelabel+'_'+ISO+'.pdf'
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_DischargingPower_'+savelabel+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
+    
+    ## Plot charging and discharging capacities Vs energy capacity ratio
+    close(1); figure(1); clf()
+
+    for i in arange(len(N_cycles)):
+        color, ls, mixtxt = get_color_and_linestyle(alpha_w[i],N_cycles[i])
+        label_ = '{0:.0f}'.format(N_cycles[i]) + mixtxt
+        
+        plot(gamma*annual_TWh,(1e3*mean(L)*P_in_[i])/(mean(L)*CS_fit_[i]),color=color,ls=ls,label=label_)
+
+    dx = 0.02*annual_TWh
+    y = 850/3.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
+
+    xlabel('Wind plus solar energy [TWh/yr]')
+    ylabel('Charging ratio [MW/GWh]')
+
+    axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=850)
+
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=1)
+
+    tight_layout()
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_ChargingVsVolume_Ratio_'+savelabel+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
+
+    ## Plot charging and discharging capacities Vs energy capacity ratio
+    close(1); figure(1); clf()
+
+    for i in arange(len(N_cycles)):
+        color, ls, mixtxt = get_color_and_linestyle(alpha_w[i],N_cycles[i])
+        label_ = '{0:.0f}'.format(N_cycles[i]) + mixtxt
+        
+        plot(gamma*annual_TWh,(1e3*mean(L)*P_out_[i])/(mean(L)*CS_fit_[i]),color=color,ls=ls,label=label_)
+
+    dx = 0.02*annual_TWh
+    y = 260/3.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
+
+    xlabel('Wind plus solar energy [TWh/yr]')
+    ylabel('Discharging ratio [MW/GWh]')
+
+    axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=260)
+
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=1)
+
+    tight_layout()
+    save_file_name = 'plot_storage_buildup_fixed_cycle_number_DischargingVsVolume_Ratio_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
     
@@ -1193,6 +1253,18 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
 # plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind_storage',CS=7.4)
 # plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal_storage',CS=7.4)
 
+### 2013
+#
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_no_storage')
+#
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_no_gain',CS=7.4)
+#
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_100',gain_storage=.99999,CS=7.4)
+#
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_90',gain_storage=.9,CS=7.4)
+#
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_99',gain_storage=.99,CS=7.4)
+
 def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_in = 1., eta_out = 1., fancy_storage=False):
 
     #Load data
@@ -1230,13 +1302,7 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     print 'sum(curtailment), sum(filling), sum(extraction), sum(wind_local), sum(solar_local)'
     print sum(curtailment), sum(filling), sum(extraction), sum(wind_local), sum(solar_local)
 
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-
     close(1); figure(1); clf()
-
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     fill_between(t[mask],wind_local[mask],color=color_wind,edgecolor=color_edge,lw=1)
     fill_between(t[mask],wind_local[mask]+solar_local[mask],wind_local[mask],color=color_solar,edgecolor=color_edge,lw=1)
@@ -1273,11 +1339,11 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     if CS==None:
         pp = [pp_load[0],pp_wind,pp_solar,pp_curtailment]
         txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus']
-        leg = legend(pp,txtlabels,loc='upper left',ncol=5,title=titletxt);
+        leg = legend(pp,txtlabels,loc='upper left',ncol=3,title=titletxt);
     else:
         pp = [pp_load[0],pp_filling,pp_wind,pp_curtailment,pp_solar,pp_storage]
-        txtlabels = ['Load ({0})'.format(ISO),'Stored surplus','Wind','Remainder surplus','Solar','Storage']    
-        leg = legend(pp,txtlabels,loc='upper left',ncol=4,title=titletxt);
+        txtlabels = ['Load ({0})'.format(ISO),'Charging','Wind','Discharging','Solar','Rem. surplus']    
+        leg = legend(pp,txtlabels,loc='upper left',ncol=3,title=titletxt);
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
@@ -1820,11 +1886,11 @@ def get_min_storage_cap_alt(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-2,re
         Storage_benefit[i] = storage_benefit(alpha_w[i],gamma[i],1e3,1e3) 
 
         ## Values to be returned
-        E_surplus[i] = mean(get_positive(mismatch(alpha_w, gamma))) ## Mean hourly surplus before storage.
-        E_residual[i] = mean(get_positive(-mismatch(alpha_w, gamma))) ## Mean hourly residual load before storage. 
+        E_surplus[i] = mean(get_positive(mismatch(alpha_w[i],gamma[i]))) ## Mean hourly surplus before storage.
+        E_residual[i] = mean(get_positive(-mismatch(alpha_w[i],gamma[i]))) ## Mean hourly residual load before storage. 
         E_discharge[i] = (1.-acc)*Storage_benefit[i]/len(l) ## Mean hourly output of the storage. (almost same as 'Storage_benefit')
-        E_charge[i] = E_discharge/eta_discharge/eta_charge ## Mean hourly input of the storage.
-        N_cycles[i] = (E_discharge/eta_discharge)/CS ## Average number of accumulated storage cycles per hour.
+        E_charge[i] = E_discharge[i]/eta_discharge/eta_charge ## Mean hourly input of the storage.
+        N_cycles[i] = (E_discharge[i]/eta_discharge)/CS ## Average number of accumulated storage cycles per hour.
 
         print i,
         sys.stdout.flush()    
@@ -1917,12 +1983,18 @@ def plot_min_storage_cap(ISO='DK', gamma=linspace(0,1.05,11), alpha_w=1., CS=6, 
     save_file_name = 'plot_min_storage_cap_'+savelabel+'_'+ '10xCS{0:0.0f}h'.format(10*CS) +'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
-    
+#   2013:
+#
+#   plot_min_storage_cap_summary(gamma=linspace(0,1.05,31))
+#
+#   plot_min_storage_cap_summary(gamma=linspace(0,1.05,31),CS=.254)
+#
 def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.9], linestyle=['-',':'], CS=2.54, txtlabel='', savelabel=''):
     """Compares wind only and optimal mix scenarios"""
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    annual_TWh = mean(L)*365*24/1e3
     
     ## Use optimal path, the optimal path WITHOUT storage is used.
     alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
@@ -1938,51 +2010,41 @@ def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.
         acc = 1. - gain[i]
         
         #Optimal mix
+        print L, Gw, Gs, gamma, alpha_w_opt, CS, acc
         Res_load_sum_opt[i], P_in_opt, P_out_opt = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_opt, CS, acc)
         P_in_opt_[i], P_out_opt_[i] = mean(P_in_opt.transpose(),axis=0), mean(P_out_opt.transpose(),axis=0)
     
         #Wind only
         Res_load_sum_wind[i], P_in_wind, P_out_wind = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_wind, CS, acc)
         P_in_wind_[i], P_out_wind_[i] = mean(P_in_wind.transpose(),axis=0), mean(P_out_wind.transpose(),axis=0)
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10    
       
     max_y = 1.2*mean(L)*amax(concatenate([P_in_opt_,P_out_opt_,P_in_wind_,P_out_wind_]))
       
     ### Chargeing storage                      
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     #plot(gamma,balancing_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'Opt. mix ({0:.0f}%)'.format(gain[i]*100))
+        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'{0:.0f}% (opt. mix)'.format(gain[i]*100))
 
     #plot(gamma*mean(L)*365*24/1e3,Res_load_sum_opt[0],'-',color=color_wind,lw=3, label='Wind')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'Wind only ({0:.0f}%)'.format(gain[i]*100))
+        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'{0:.0f}% (wind-only)'.format(gain[i]*100))
 
-    axvline(.25*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.5*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.75*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(1.*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-
-    text(.25*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'25%',weight='semibold',fontsize=10,ha='right')
-    text(.5*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'50%',weight='semibold',fontsize=10,ha='right')
-    text(.75*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'75%',weight='semibold',fontsize=10,ha='right')
-    text(1.0*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'100%',weight='semibold',fontsize=10,ha='right')
+    dx = 0.02*annual_TWh
+    plot_vertical_line_and_label(0.25*annual_TWh,max_y/3.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,max_y/3.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,max_y/3.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,max_y/3.,r'100%',dx)
 
     axis(xmin=0,xmax=amax(gamma*mean(L)*365*24/1e3),ymin=0,ymax=max_y)
     
-    ylabel('Power [GW]')
+    ylabel('Charging power [GW]')
     xlabel('Wind plus solar energy [TWh/yr]')
     
-    leg = legend(loc='upper left',ncol=2,title='Charging (Energy cap. {0:.0f} GWh)'.format(CS*mean(L)));
-    ltext  = leg.get_texts();
-    setp(ltext, fontsize='small')    # the legend text fontsize
+    legend(loc='upper left',ncol=1,title='Storage gain');
 
-    add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]')
+    #add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]')
     
     tight_layout()
     save_file_name = 'plot_min_storage_cap_summary_charging_'+savelabel+'_'+ '10xCS{0:0.0f}h'.format(10*CS) +'_'+ISO+'.pdf'
@@ -1990,43 +2052,39 @@ def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.
     
     ### Dischargeing storage                      
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
     
     #plot(gamma,excess_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_out_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'Opt. mix ({0:.0f}%)'.format(gain[i]*100))    
+        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_out_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'{0:.0f}% (opt. mix)'.format(gain[i]*100))    
     
     #plot(gamma,excess_power_mean_wind,'-',color=color_wind,lw=3, label='Wind')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_out_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'Wind only ({0:.0f}%)'.format(gain[i]*100))
+        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_out_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'{0:.0f}% (wind-only)'.format(gain[i]*100))
     
-    axvline(.25*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.5*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.75*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(1.*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-
-    text(.25*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'25%',weight='semibold',fontsize=10,ha='right')
-    text(.5*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'50%',weight='semibold',fontsize=10,ha='right')
-    text(.75*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'75%',weight='semibold',fontsize=10,ha='right')
-    text(1.0*mean(L)*365*24/1e3-.3,.05*amax(mean(L)),r'100%',weight='semibold',fontsize=10,ha='right')        
+    dx = 0.02*annual_TWh
+    plot_vertical_line_and_label(0.25*annual_TWh,max_y/3.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,max_y/3.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,max_y/3.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,max_y/3.,r'100%',dx)       
                 
     axis(xmin=0,xmax=amax(gamma*mean(L)*365*24/1e3),ymin=0,ymax=max_y)
 
-    ylabel('Power [GW]')
+    ylabel('Discharging power [GW]')
     xlabel('Wind plus solar energy [TWh/yr]')
 
-    leg = legend(loc='upper left',ncol=2,title='Discharging (Energy cap. {0:.0f} GWh)'.format(CS*mean(L)));
-    ltext  = leg.get_texts();
-    setp(ltext, fontsize='small')    # the legend text fontsize
+    legend(loc='upper left',ncol=1,title='Storage gain');
 
-    add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]')
+    #add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]')
 
     tight_layout()
     save_file_name = 'plot_min_storage_cap_summary_discharging_'+savelabel+'_'+ '10xCS{0:0.0f}h'.format(10*CS) +'_'+ISO+'.pdf'
     save_figure(save_file_name)    
-    
-def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,111), CS=[.254,2.54,7.6], linestyle=['-','--','-.',':'], txtlabel='', savelabel=''):
+
+#
+#   plot_min_storage_cap_fixed_gamma_summary( gamma=.75)
+#   plot_min_storage_cap_fixed_gamma_summary( gamma=.75,gain=array([.9,.99,1.]))
+
+def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,111), CS=[.254,2.54,7.6], linestyle=['-','--','-.',':'], txtlabel='', savelabel='',ISO='DK'):
     
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -2046,39 +2104,36 @@ def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,1
         Res_load_sum_opt[i], P_in_opt[i], P_out_opt[i] = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_opt, CS[1], acc)
         Res_load_sum_wind[i], P_in_wind[i], P_out_wind[i] = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_wind, CS[1], acc)
     
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-    
     max_y = 1.2*mean(L)*amax(concatenate([P_in_opt,P_out_opt,P_in_wind,P_out_wind]))
     
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
     
-    plot(100*gain,mean(L)*mean(P_in_opt.transpose(),axis=0),'k-',label='Charge (opt. mix)')
-    plot(100*gain,mean(L)*mean(P_out_opt.transpose(),axis=0),'k:',label='Discharge (opt. mix)')
+    plot(100*gain,1e3*mean(L)*mean(P_in_opt.transpose(),axis=0),'k-',label='Charging (opt. mix)')
+    plot(100*gain,1e3*mean(L)*mean(P_out_opt.transpose(),axis=0),'k:',label='Discharging (opt. mix)')
     
-    plot(100*gain,mean(L)*mean(P_in_wind.transpose(),axis=0),'-',lw=1.5,color=color_wind,label='Charge (Wind only)')
-    plot(100*gain,mean(L)*mean(P_out_wind.transpose(),axis=0),':',lw=1.5,color=color_wind,label='Discharge (Wind only)')
+    plot(100*gain,1e3*mean(L)*mean(P_in_wind.transpose(),axis=0),'-',lw=1.5,color=color_wind,label='Charging (wind-only)')
+    plot(100*gain,1e3*mean(L)*mean(P_out_wind.transpose(),axis=0),':',lw=1.5,color=color_wind,label='Discharging (wind-only)')
     
     xlabel(r'Gain [%]')
-    ylabel('Power [GW]')
+    ylabel('Power [MW]')
     
-    axvline(90,ls='--',color='k',lw=1)
-    text(90-2,.05*amax(mean(L)),r'90%',weight='semibold',fontsize=10,ha='right')
+    axvline(90,ls='--',color='k',lw=1,alpha=.75)
+    text(90-2,max_y*2/3.,r'90%',weight='semibold',ha='right')
     
     axis(xmin=0,xmax=100,ymin=0,ymax=max_y)
     
-    leg = legend(loc='upper left',ncol=2,title='Suboptimal storage use (Energy cap. {0:0.0f} GWh)'.format(float(CS[1]*mean(L))));
-    ltext  = leg.get_texts();
-    setp(ltext, fontsize='small')    # the legend text fontsize
-
-    add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]',tickFormatStr='%.2f')
+    legend(loc='upper left',ncol=1);
+    #add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]',tickFormatStr='%.2f')
         
     tight_layout()
     save_file_name = 'plot_min_storage_cap_fixed_gamma_summary_'+'100x_gamma_{0:.0f}'.format(100*gamma)+'_'+'10xCS{0:0.0f}h'.format(10*CS[1])+'_'+ISO+'.pdf'
     save_figure(save_file_name)  
     
+    print 'Gain: ' + str(gain)
+    print 'P_in_opt: ' + str(mean(L)*mean(P_in_opt.transpose(),axis=0))
+    print 'P_out_opt: ' + str(mean(L)*mean(P_out_opt.transpose(),axis=0))
+    print 'P_in_wind: ' + str(mean(L)*mean(P_in_wind.transpose(),axis=0))
+    print 'P_out_wind: ' + str(mean(L)*mean(P_out_wind.transpose(),axis=0))
 
 #  get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.0,30])/3.94329, alpha_w=[1.], storage_gain=.90)
 #
@@ -2250,13 +2305,13 @@ def plot_storage_balancing_synergy(ISO='DK',CS=linspace(0,13,5),gamma=[.5,.75,1.
     
     
 
-def plot_vertical_line_and_label(x,y,textlabel=None,dx=None,ls='--',color='k',lw=1,ymax=1,ymin=0):
+def plot_vertical_line_and_label(x,y,textlabel=None,dx=None,ls='--',color='k',lw=1,ymax=1,ymin=0,alpha=.75):
 
     if dx==None:
         dx=0.05*x
 
-    axvline(x,ls=ls,color=color,lw=lw,ymin=ymin,ymax=ymax)
-    text(x-dx,y,textlabel,weight='semibold',fontsize=10,ha='right')
+    axvline(x,ls=ls,color=color,lw=lw,ymin=ymin,ymax=ymax,alpha=alpha)
+    text(x-dx,y,textlabel,weight='semibold',ha='right')
     
     
     

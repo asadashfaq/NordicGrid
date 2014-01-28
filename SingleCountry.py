@@ -709,18 +709,25 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 #
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix')
 #
+#   Hydrogen storage efficiencies: eta_in=0.4, eta_out=0.4
+#   =============
 #
-def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None, txtlabel='', savelabel=''):
+#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix_H2_storage', eta_in=0.4, eta_out=0.4)
+#
+#
+def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None, txtlabel='', savelabel='', eta_in=1, eta_out=1):
 
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
     annual_TWh = mean(L)*365*24/1e3
     
-    ## Baseline, no storage
+    ## Baseline, no storage  
+    ## XXX: I should check if this is true in all cases.
     if alpha_w=='season':
-        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=NaN, returnall=True)
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=NaN, returnall=True, eta_in=eta_in, eta_out=eta_out)
     elif alpha_w==None:
-        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True, eta_in=eta_in, eta_out=eta_out)
     else:
+        ## Here, a constant alpha_w is assumed.
         res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
         alpha_w_path = alpha_w*ones_like(gamma)    
 
@@ -730,10 +737,12 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     
     Surplus_ = zeros_like(Gamma_)
     for i in arange(len(Gamma_.flat)):
-        Surplus_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i])[0]/len(L) + 0.001
+        ## XXX: In fact, res_load_sum is returned.
+        Surplus_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i], eta_in=eta_in, eta_out=eta_out)[0]/len(L) + 0.001
 
-
-    Deviation_from_target = Gamma_ - (1 - Surplus_)
+    ## XXX: Gamma - load covered by VRES = surplus VRES (not corrected for eta_in, eta_out). (hourly average values, normalized)
+    Deviation_from_target = Gamma_ - (1. - Surplus_)
+    ## XXX: Deviation_from_target[0] is the values for no storage (assuming that CS includes 0).
     Storage_output = kron(array(ones_like(CS),ndmin=2).transpose(),Deviation_from_target[0]) - Deviation_from_target
 
     from matplotlib.colors import ListedColormap, BoundaryNorm
@@ -1791,7 +1800,7 @@ def get_optimal_mix_storage(L, GW, GS, gamma=1., p_interval=0.01, returnall=Fals
 
 
 
-def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None,returnall=False):
+def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None, returnall=False, eta_in=1., eta_out=1.):
 
 	L, GW, GS, gamma, alpha = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2), array(gamma,ndmin=1), array(alpha,ndmin=1)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
 	weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
@@ -1805,7 +1814,7 @@ def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None,returnall=False):
 	if CS==None:
 		res_load_sum = lambda alpha_w, gamma: sum(get_positive(-mismatch(alpha_w,gamma)))
 	else:
-		res_load_sum = lambda alpha_w, gamma: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w,gamma),storage_capacity = CS)[0]))
+		res_load_sum = lambda alpha_w, gamma: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w,gamma),eta_in,eta_out,storage_capacity = CS)[0]))
 	
 	Gamma, Alpha = meshgrid(gamma,alpha)
 	
@@ -1847,25 +1856,25 @@ def get_mismatch(L, GW, GS, gamma=1, alpha_w=1.,CS=None):
 
 
 
-def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01, CS=None, returnall=False, normalized=True):
+def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01, CS=None, returnall=False, normalized=True, eta_in=1, eta_out=1):
     """Wraper for get_optimal_mix_balancing(). This function allows gamma to be an array."""
 
     gamma = array(gamma,ndmin=1)
     
     if returnall==True:
         
-        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, GW, GS, gamma[0], p_interval, CS, returnall, normalized)
+        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, GW, GS, gamma[0], p_interval, CS, returnall, normalized, eta_in=eta_in, eta_out=eta_out)
         alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = expand2array(alpha_w_opt,gamma), expand2array(alpha_w_opt_1p_interval,gamma), expand2array(res_load_sum_opt,gamma), expand2array(mismatch_opt,gamma), expand2array(res_load_sum_1p,gamma)
         
         for i in arange(1,len(gamma)):
-            alpha_w_opt[i], alpha_w_opt_1p_interval[i], res_load_sum_opt[i], mismatch_opt[i], res_load_sum_1p[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized)
+            alpha_w_opt[i], alpha_w_opt_1p_interval[i], res_load_sum_opt[i], mismatch_opt[i], res_load_sum_1p[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized, eta_in=eta_in, eta_out=eta_out)
         
         return alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p
 
     else:
         alpha_w_opt = zeros(gamma.shape)
         for i in arange(len(gamma)):
-            alpha_w_opt[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized)
+            alpha_w_opt[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized, eta_in=eta_in, eta_out=eta_out)
         
         return alpha_w_opt
 
@@ -1875,14 +1884,14 @@ def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01
 
 
         
-def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True):
+def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True, eta_in=1., eta_out=1.):
     """ Old version of get_optimal_mix()"""
 
     if returnall:
         ## The returned value of CS is ommitted for compatability reasons.
-        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind)[:-1]
+        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind, eta_in, eta_out)[:-1]
     else:
-        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind)
+        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind, eta_in, eta_out)
 
 
 ################################################################################################
@@ -1890,7 +1899,7 @@ def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, ret
 
 
 
-def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True):
+def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True, eta_in=1., eta_out=1.):
 
     L, GW, GS = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
     weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
@@ -1909,14 +1918,14 @@ def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=Fal
         
     elif isnan(CS):
         ## Seasonal optimal mix: In this case, the seasonal optimal mix is found by minimizing CS instead of the summed residual load.
-        CS_ = lambda alpha_w: get_policy_2_storage(mismatch(alpha_w))[1]
+        CS_ = lambda alpha_w: get_policy_2_storage(mismatch(alpha_w),eta_in,eta_out)[1]
         alpha_w_opt = fmin(CS_,0.5,disp=False)
         CS = CS_(alpha_w_opt)
-        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
+        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),eta_in,eta_out,storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
     
     else:
         ## Optimal mix given a specific storage energy capacity.
-        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
+        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),eta_in,eta_out,storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
         alpha_w_opt = fmin(res_load_sum,0.5,disp=False)
 
     ## Correct for nonsense alpha_w since fmin does not include bounds.
@@ -1929,12 +1938,12 @@ def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=Fal
         if CS==None:
             mismatch_opt = mismatch(alpha_w_opt)
         else:
-            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),storage_capacity = CS)[0]
+            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),eta_in,eta_out,storage_capacity = CS)[0]
     else:
         if CS==None:
             mismatch_opt = mismatch(alpha_w_opt)*mean(sum(L,axis=0))
         else:
-            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),storage_capacity = CS)[0]*mean(sum(L,axis=0))
+            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),eta_in,eta_out,storage_capacity = CS)[0]*mean(sum(L,axis=0))
             
     res_load_sum_opt = res_load_sum(alpha_w_opt)
 

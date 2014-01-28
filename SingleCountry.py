@@ -709,13 +709,24 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 #
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix')
 #
-#   Hydrogen storage efficiencies: eta_in=0.4, eta_out=0.4
+
+#   100% efficient storage: eta_charge=1.0, eta_discharge=1.0
 #   =============
 #
-#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix_H2_storage', eta_in=0.6, eta_out=0.6)
+#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=1,txtlabel='wind-only',savelabel='wind_only_ideal_storage', eta_charge=1., eta_discharge=1.)
 #
+#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix_ideal_storage', eta_charge=1., eta_discharge=1.)
 #
-def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None, txtlabel='', savelabel='', eta_in=1, eta_out=1):
+
+#   Hydrogen storage efficiencies: eta_charge=0.6, eta_discharge=0.6
+#   =============
+#
+#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=1,txtlabel='wind-only',savelabel='wind_only_H2_storage', eta_charge=0.6, eta_discharge=0.6)
+#
+#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix_H2_storage', eta_charge=0.6, eta_discharge=0.6)
+#
+
+def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None, txtlabel='', savelabel='', eta_charge=1, eta_discharge=1):
 
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
     annual_TWh = mean(L)*365*24/1e3
@@ -723,9 +734,9 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     ## Baseline, no storage  
     ## XXX: I should check if this is true in all cases.
     if alpha_w=='season':
-        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=NaN, returnall=True, eta_in=eta_in, eta_out=eta_out)
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=NaN, returnall=True, eta_charge=eta_charge, eta_discharge=eta_discharge)
     elif alpha_w==None:
-        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True, eta_in=eta_in, eta_out=eta_out)
+        alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True, eta_charge=eta_charge, eta_discharge=eta_discharge)
     else:
         ## Here, a constant alpha_w is assumed.
         res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
@@ -738,16 +749,16 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     Res_load_sum_ = np.zeros_like(Gamma_)
     for i in arange(len(Gamma_.flat)):
         ## The value here is normalized by the number of hours in L.
-        Res_load_sum_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i], eta_in=eta_in, eta_out=eta_out)[0]/len(L) + 0.001
+        Res_load_sum_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i], eta_charge=eta_charge, eta_discharge=eta_discharge)[0]/len(L) + 0.001
 
-    ## Res_load_sum_[0] is the values for no storage (assuming that CS includes 0). Storage_output is the value after applying both eta_in and eta_out.
+    ## Res_load_sum_[0] is the values for no storage (assuming that CS includes 0). Storage_output is the value after applying both eta_charge and eta_discharge.
     Storage_output = kron(array(ones_like(CS),ndmin=2).transpose(),Res_load_sum_[0]) - Res_load_sum_
     
     ## Annual cycle count.
-    Storage_cycle_count = (Storage_output*365*24/eta_out)/CS_
+    Storage_cycle_count = (Storage_output*365*24/eta_discharge)/CS_
 
     ## What was originally feed into the storage.
-    Storage_input = Storage_output/eta_out/eta_in
+    Storage_input = Storage_output/eta_discharge/eta_charge
     
     ## Total surplus
     Surplus_0 = Gamma_ - (1 - kron(array(ones_like(CS),ndmin=2).transpose(),Res_load_sum_[0]))
@@ -826,7 +837,7 @@ def get_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cy
         alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
     else:
         res_load_sum_0 = get_balancing(L, Gw, Gs, gamma, alpha_w, CS=None)[0]/len(L)
-        alpha_w_path = alpha_w*ones_like(gamma) 
+        alpha_w_path = alpha_w*ones_like(gamma)
     
     fitfunc_N_cycles = lambda gamma, alpha_w, CS, acc: get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, acc,eta_charge=eta_charge,eta_discharge=eta_discharge,returnall=True)[-1]*365*24
     
@@ -895,6 +906,15 @@ def get_color_and_linestyle(alpha_w,N_cycles=None,gamma=None):
 ##
 # plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,51))
 #    
+
+#   100% efficient storage: eta_charge=1.0, eta_discharge=1.0
+#   =============
+#   plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,51), eta_charge=1., eta_discharge=1., txtlabel='', savelabel='_ideal_storage')
+
+#   Hydrogen storage efficiencies: eta_charge=0.6, eta_discharge=0.6
+#   =============
+#   plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,51), eta_charge=0.6, eta_discharge=0.6, txtlabel='', savelabel='_H2_storage')
+
 def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), N_cycles=[50,100,200,50,100], gain=0.90, alpha_w=[None,None,None,1,1], eta_charge=1., eta_discharge=1., txtlabel='', savelabel=''):
 
     N_cycles = array(N_cycles,ndmin=1)
@@ -1277,7 +1297,7 @@ def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True)
     mismatch = (wind+solar) - L
     
     if CS!=None or CS==0:
-        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        mismatch_r = get_policy_2_storage(mismatch, eta_charge = 1., eta_discharge = 1., storage_capacity = CS)[0]
     else:
         mismatch_r = mismatch
     
@@ -1325,7 +1345,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
     mismatch = (wind+solar) - L
     
     if CS!=None or CS==0:
-        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        mismatch_r = get_policy_2_storage(mismatch, eta_charge = 1., eta_discharge = 1., storage_capacity = CS)[0]
     else:
         mismatch_r = mismatch
     
@@ -1423,7 +1443,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
 #
 #   plot_hourly_generation_alt(ISO='DK-hist',alpha_w=1,gamma=.25,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_wind_only_hist_25p')
 #
-def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_in = 1., eta_out = 1., fancy_storage=False):
+def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_charge = 1., eta_discharge = 1., fancy_storage=False):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -1440,12 +1460,12 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     if CS!=None or CS==0:
         
         if gain_storage!=None:
-            Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, 1-gain_storage,eta_charge=eta_in,eta_discharge=eta_out)
+            Storage_benefit, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, 1-gain_storage,eta_charge=eta_charge,eta_discharge=eta_discharge)
             P_in, P_out = P_in_[0][0], P_out_[0][0]
             print Storage_benefit, P_in, P_out
         
-        mismatch_r = get_policy_2_storage_modified(mismatch/mean(L), eta_in = eta_in, eta_out = eta_out, CS = CS, P_in=P_in, P_out=P_out,fancy_storage=fancy_storage)[0]*mean(L)
-        #mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS)[0]
+        mismatch_r = get_policy_2_storage_modified(mismatch/mean(L), eta_charge = eta_charge, eta_discharge = eta_discharge, CS = CS, P_in=P_in, P_out=P_out,fancy_storage=fancy_storage)[0]*mean(L)
+        #mismatch_r = get_policy_2_storage(mismatch, eta_charge = 1., eta_discharge = 1., storage_capacity = CS)[0]
         
     else:
         mismatch_r = mismatch
@@ -1550,7 +1570,7 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     mismatch = (wind+solar) - L
     
     if CS!=None or CS==0:
-        mismatch_r = get_policy_2_storage(mismatch, eta_in = 1., eta_out = 1., storage_capacity = CS*mean(L))[0]
+        mismatch_r = get_policy_2_storage(mismatch, eta_charge = 1., eta_discharge = 1., storage_capacity = CS*mean(L))[0]
     else:
         mismatch_r = mismatch
     
@@ -1808,7 +1828,7 @@ def get_optimal_mix_storage(L, GW, GS, gamma=1., p_interval=0.01, returnall=Fals
 
 
 
-def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None, returnall=False, eta_in=1., eta_out=1.):
+def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None, returnall=False, eta_charge=1., eta_discharge=1.):
 
 	L, GW, GS, gamma, alpha = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2), array(gamma,ndmin=1), array(alpha,ndmin=1)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
 	weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
@@ -1822,7 +1842,7 @@ def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None, returnall=False, eta_in
 	if CS==None:
 		res_load_sum = lambda alpha_w, gamma: sum(get_positive(-mismatch(alpha_w,gamma)))
 	else:
-		res_load_sum = lambda alpha_w, gamma: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w,gamma),eta_in,eta_out,storage_capacity = CS)[0]))
+		res_load_sum = lambda alpha_w, gamma: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w,gamma),eta_charge,eta_discharge,storage_capacity = CS)[0]))
 	
 	Gamma, Alpha = meshgrid(gamma,alpha)
 	
@@ -1864,25 +1884,25 @@ def get_mismatch(L, GW, GS, gamma=1, alpha_w=1.,CS=None):
 
 
 
-def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01, CS=None, returnall=False, normalized=True, eta_in=1, eta_out=1):
+def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01, CS=None, returnall=False, normalized=True, eta_charge=1, eta_discharge=1):
     """Wraper for get_optimal_mix_balancing(). This function allows gamma to be an array."""
 
     gamma = array(gamma,ndmin=1)
     
     if returnall==True:
         
-        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, GW, GS, gamma[0], p_interval, CS, returnall, normalized, eta_in=eta_in, eta_out=eta_out)
+        alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = get_optimal_mix_balancing(L, GW, GS, gamma[0], p_interval, CS, returnall, normalized, eta_charge=eta_charge, eta_discharge=eta_discharge)
         alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p = expand2array(alpha_w_opt,gamma), expand2array(alpha_w_opt_1p_interval,gamma), expand2array(res_load_sum_opt,gamma), expand2array(mismatch_opt,gamma), expand2array(res_load_sum_1p,gamma)
         
         for i in arange(1,len(gamma)):
-            alpha_w_opt[i], alpha_w_opt_1p_interval[i], res_load_sum_opt[i], mismatch_opt[i], res_load_sum_1p[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized, eta_in=eta_in, eta_out=eta_out)
+            alpha_w_opt[i], alpha_w_opt_1p_interval[i], res_load_sum_opt[i], mismatch_opt[i], res_load_sum_1p[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized, eta_charge=eta_charge, eta_discharge=eta_discharge)
         
         return alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_opt, mismatch_opt, res_load_sum_1p
 
     else:
         alpha_w_opt = zeros(gamma.shape)
         for i in arange(len(gamma)):
-            alpha_w_opt[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized, eta_in=eta_in, eta_out=eta_out)
+            alpha_w_opt[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized, eta_charge=eta_charge, eta_discharge=eta_discharge)
         
         return alpha_w_opt
 
@@ -1892,14 +1912,14 @@ def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01
 
 
         
-def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True, eta_in=1., eta_out=1.):
+def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True, eta_charge=1., eta_discharge=1.):
     """ Old version of get_optimal_mix()"""
 
     if returnall:
         ## The returned value of CS is ommitted for compatability reasons.
-        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind, eta_in, eta_out)[:-1]
+        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind, eta_charge, eta_discharge)[:-1]
     else:
-        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind, eta_in, eta_out)
+        return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind, eta_charge, eta_discharge)
 
 
 ################################################################################################
@@ -1907,7 +1927,7 @@ def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, ret
 
 
 
-def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True, eta_in=1., eta_out=1.):
+def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True, eta_charge=1., eta_discharge=1.):
 
     L, GW, GS = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
     weighed_sum = lambda x: sum(x,axis=0)/mean(sum(x,axis=0))
@@ -1926,14 +1946,14 @@ def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=Fal
         
     elif isnan(CS):
         ## Seasonal optimal mix: In this case, the seasonal optimal mix is found by minimizing CS instead of the summed residual load.
-        CS_ = lambda alpha_w: get_policy_2_storage(mismatch(alpha_w),eta_in,eta_out)[1]
+        CS_ = lambda alpha_w: get_policy_2_storage(mismatch(alpha_w),eta_charge,eta_discharge)[1]
         alpha_w_opt = fmin(CS_,0.5,disp=False)
         CS = CS_(alpha_w_opt)
-        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),eta_in,eta_out,storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
+        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),eta_charge,eta_discharge,storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
     
     else:
         ## Optimal mix given a specific storage energy capacity.
-        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),eta_in,eta_out,storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
+        res_load_sum = lambda alpha_w: sum(get_positive(-get_policy_2_storage(mismatch(alpha_w),eta_charge,eta_discharge,storage_capacity = CS)[0])) - alpha_w*0.001*sign(DefaultWind-.5)
         alpha_w_opt = fmin(res_load_sum,0.5,disp=False)
 
     ## Correct for nonsense alpha_w since fmin does not include bounds.
@@ -1946,12 +1966,12 @@ def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=Fal
         if CS==None:
             mismatch_opt = mismatch(alpha_w_opt)
         else:
-            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),eta_in,eta_out,storage_capacity = CS)[0]
+            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),eta_charge,eta_discharge,storage_capacity = CS)[0]
     else:
         if CS==None:
             mismatch_opt = mismatch(alpha_w_opt)*mean(sum(L,axis=0))
         else:
-            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),eta_in,eta_out,storage_capacity = CS)[0]*mean(sum(L,axis=0))
+            mismatch_opt = get_policy_2_storage(mismatch(alpha_w_opt),eta_charge,eta_discharge,storage_capacity = CS)[0]*mean(sum(L,axis=0))
             
     res_load_sum_opt = res_load_sum(alpha_w_opt)
 
@@ -2041,7 +2061,7 @@ def get_min_storage_cap(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-4):
 
 
 
-def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=None, P_out=None, fancy_storage=False):
+def get_policy_2_storage_modified(mismatch, eta_charge=1., eta_discharge=1., CS=NaN, P_in=None, P_out=None, fancy_storage=False):
     """ This function behaves like Morten's get_policy_2_storage(). However, it allows limiting the charging and discharging capacities of the storage. """
     
     if P_in==None:
@@ -2056,9 +2076,9 @@ def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=
     
     ## The cut mismatch is feed into Mortens code to produce the cut reduced mismatch.     
     if fancy_storage:
-        mismatch_r_, CS_used = get_storage(mismatch_(P_in,P_out),eta_in,eta_out,CS)   
+        mismatch_r_, CS_used = get_storage(mismatch_(P_in,P_out),eta_charge,eta_discharge,CS)   
     else:
-        mismatch_r_, CS_used = get_policy_2_storage(mismatch_(P_in,P_out),eta_in,eta_out,CS)   
+        mismatch_r_, CS_used = get_policy_2_storage(mismatch_(P_in,P_out),eta_charge,eta_discharge,CS)   
         
     ## Calculate the real reduced mismatch.
     mismatch_r = mismatch_r_ + (mismatch - mismatch_(P_in,P_out))
@@ -2094,7 +2114,7 @@ def get_min_storage_cap_alt(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-2,re
     mismatch_ = lambda alpha_w, gamma, P_in, P_out: amax([amin([mismatch(alpha_w, gamma),P_in*ones_like(l)],axis=0),-P_out*ones_like(l)],axis=0)
 
     ## Summed residual load after storage.
-    res_load_sum = lambda alpha_w, gamma, P_in, P_out: sum(get_positive(-get_policy_2_storage(mismatch_(alpha_w,gamma,P_in,P_out),storage_capacity = CS)[0]) + get_positive(-mismatch(alpha_w, gamma)-P_out))
+    res_load_sum = lambda alpha_w, gamma, P_in, P_out: sum(get_positive(-get_policy_2_storage(mismatch_(alpha_w,gamma,P_in,P_out),eta_charge,eta_discharge,storage_capacity = CS)[0]) + get_positive(-mismatch(alpha_w, gamma)-P_out))
     
     ## Difference between residual load before and after storage.
     storage_benefit = lambda alpha_w, gamma, P_in, P_out: sum(get_positive(-mismatch(alpha_w, gamma))) - res_load_sum(alpha_w,gamma,P_in,P_out)

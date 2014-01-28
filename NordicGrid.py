@@ -187,6 +187,8 @@ def plot_test_NordicGrid_hydro_storage(year, data_nodes, data_flows, N_id=0, n_i
 ## 2011 without storage lakes: OK
 #
 #   year, data_nodes, data_flows = get_nodes_and_flows_vs_year(year=linspace(1985,2053,21),lapse=None,path_nodes='./output_data/2011/',admat='./settings/admat_2011.txt',N_0=build_NordicGrid_nodes(admat='./settings/admat_2011.txt',storage=False),add_color=True)
+
+
 #                                                                                                                                                                                                   
 ## Cu with storage lakes
 #
@@ -333,13 +335,13 @@ def plot_generation_summary_vs_year(year,data,lapse=50*24,datalabel=None):
 
 ##New version
 #
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_2011_storage')
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_2011_storage',node_id=[0])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_2011_storage',node_id=[1])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_2011_storage',node_id=[2])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_2011_storage',node_id=[3])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_2011_storage',node_id=[4])
-#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NordicRegion_2011_storage',node_id=[0,1,2,3,4])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK_cu')
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NO_cu',node_id=[0])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='SE_cu',node_id=[1])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-W_cu',node_id=[2])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DK-E_cu',node_id=[3])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='DE-N_cu',node_id=[4])
+#   plot_generation_summary_vs_year_2(year,data_nodes,lapse=None,datalabel='NordicRegion_cu',node_id=[0,1,2,3,4])
 #
 def plot_generation_summary_vs_year_2(year,data_nodes,node_id=[2,3],lapse=50*24,datalabel='Denmark'):
     """ (almost) Updated to use EuropeanGridR. NOTE: If balancing is shared, this function may need an update."""

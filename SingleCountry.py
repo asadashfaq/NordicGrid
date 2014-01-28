@@ -38,6 +38,13 @@ golden_ratio = 1.61803399
 ## Standard figure size:
 figure_size = [6.5,4.3]
 
+
+
+################################################################################################
+################################################################################################
+
+
+
 def plot_duration_curves(ISO='DK', gamma=[0,.25,.5,.75,1.], alpha_w=.8, CS=None, N_bins=211):
 
     #Load data
@@ -113,6 +120,13 @@ def plot_duration_curves(ISO='DK', gamma=[0,.25,.5,.75,1.], alpha_w=.8, CS=None,
     
     tight_layout()
     save_figure('plot_duration_curves_downregulation_' + ISO + '.pdf')
+
+
+
+################################################################################################
+################################################################################################
+
+
     
 def get_duration_curve_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bins=211):
 
@@ -130,6 +144,12 @@ def get_duration_curve_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_b
     power = bin_center
 
     return duration, power
+
+
+################################################################################################
+################################################################################################
+
+
 
 def get_duration_curve_upregulation(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bins=211):
 
@@ -150,6 +170,13 @@ def get_duration_curve_upregulation(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bi
 
     return duration, power
 
+
+
+################################################################################################
+################################################################################################
+
+
+
 def get_duration_curve_downregulation(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_bins=211):
 
     #Load data
@@ -168,6 +195,12 @@ def get_duration_curve_downregulation(ISO='DK', gamma=0, alpha_w=.8, CS=None, N_
     power = bin_center
 
     return duration, power
+
+
+################################################################################################
+################################################################################################
+
+
 
 def plot_phase_space_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None):
     
@@ -193,6 +226,13 @@ def plot_phase_space_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None):
     
     tight_layout()
     save_figure('plot_phase_space_residual_load_' + 'g{0:0.2f}_'.format(gamma) + ISO + '.png')
+
+
+
+################################################################################################
+################################################################################################
+
+
 
 def plot_storage_balancing_synergy_old(ISO='DK', gamma=[.75,1.,1.25], CS=linspace(0,24,5)):
 
@@ -228,6 +268,12 @@ def plot_storage_balancing_synergy_old(ISO='DK', gamma=[.75,1.,1.25], CS=linspac
     
     tight_layout()
     save_figure('plot_storage_balancing_synergy_' + ISO + '.png')
+
+
+
+################################################################################################
+################################################################################################
+
 
 
 def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,51), quantiles=[.50,.90,.99,1.00], linestyle=[':','-.','--','-'], CS=None, ROI=[.2,.5]):
@@ -314,6 +360,12 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     save_file_name = 'plot_country_balancing_at_optimal_mix_vs_gamma_'+'CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
 
+
+################################################################################################
+################################################################################################
+
+
+
 def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tickFormatStr='%.1f',invert_axis=False):
 
     majorFormatter = FormatStrFormatter(tickFormatStr)
@@ -338,7 +390,14 @@ def add_duplicate_yaxis(figure_handle,unit_multiplier=10.,label='New label',tick
         ax2.invert_yaxis()
     
     ax2.yaxis.set_major_formatter(majorFormatter)
-    
+ 
+
+################################################################################################
+################################################################################################
+
+
+       
+             
 ###
 # plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31))
 # 6h storage: plot_country_optimal_mix_vs_gamma('DK', gamma=linspace(0,2.05,31),CS=6)
@@ -474,6 +533,9 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     plot(.5*array([0.,mean(L)*365*24/1e3]),.5*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
     text(.05*mean(L)*365*24/1e3,.5*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'50%',weight='semibold',fontsize=10)
     
+    plot(.75*array([0.,mean(L)*365*24/1e3]),.75*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
+    text(.05*mean(L)*365*24/1e3,.75*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'75%',weight='semibold',fontsize=10)
+
     plot(1.*array([0.,mean(L)*365*24/1e3]),1.*array([mean(L)*365*24/1e3,0]),'k--',lw=1)
     text(.05*mean(L)*365*24/1e3,1.*mean(L)*365*24/1e3-.025*mean(L)*365*24/1e3,r'100%',weight='semibold',fontsize=10)
     
@@ -485,8 +547,8 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
     axis(xmin=0,xmax=mean(L)*365*24/1e3*amax(gamma),ymin=0,ymax=mean(L)*365*24/1e3*amax(gamma))
     axis('scaled')
-    xlabel(r'Wind energy per year [TWh/yr]')
-    ylabel(r'Solar energy per year [TWh/yr]')
+    xlabel(r'Wind energy [TWh/yr]')
+    ylabel(r'Solar energy [TWh/yr]')
     
     ax=gca()
     ax.spines['top'].set_color('none')
@@ -627,25 +689,32 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
     save_figure(save_file_name)
 
 
+
+################################################################################################
+################################################################################################
+
+
+
 #
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,14,11))
 #
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=concatenate([[0],linspace(1e-2,14,10)]))
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]))
 #
-# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=concatenate([[0],linspace(1e-2,14,10)]),alpha_w=1,txtlabel='Wind only',savelabel='wind_only')
-# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=1,txtlabel='Wind only',savelabel='wind_only')
+# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=concatenate([[0],linspace(1e-2,14,10)]),alpha_w=1,txtlabel='wind-only',savelabel='wind_only')
+# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=1,txtlabel='wind-only',savelabel='wind_only')
 #
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=concatenate([[0],linspace(1e-2,14,10)]),alpha_w=0.6,txtlabel='Seasonal mix',savelabel='season_mix')
 # plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=0.6,txtlabel='Seasonal mix',savelabel='season_mix')
 #
-# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=concatenate([[0],linspace(1e-2,14,10)]),alpha_w=None,txtlabel='Optimal mix',savelabel='opt_mix')
+# plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix')
 #
 #
 def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None, txtlabel='', savelabel=''):
 
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
-
+    annual_TWh = mean(L)*365*24/1e3
+    
     ## Baseline, no storage
     if alpha_w=='season':
         alpha_w_path, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=NaN, returnall=True)
@@ -671,35 +740,25 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     color=[(0.53,0.73,0.37), (1.,.82,.20), bg_color]
     cmap = ListedColormap(color)
     norm = BoundaryNorm([0, 0.01, 0.05, 1], cmap.N)
-
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
     
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Deviation_from_target,[0,.01,0.05,1.],cmap=cmap,norm=norm)
 
-    axvline(.25*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.5*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.75*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(1.*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
+    dx = 0.02*annual_TWh
+    y = amax(CS)*mean(L)/6.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
 
-    text(.25*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'25%',weight='semibold',fontsize=10,ha='right')
-    text(.5*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'50%',weight='semibold',fontsize=10,ha='right')
-    text(.75*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'75%',weight='semibold',fontsize=10,ha='right')
-    text(1.0*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'100%',weight='semibold',fontsize=10,ha='right')
-
-    xlabel('Wind plus solar energy ('+txtlabel+') [TWh]')
+    xlabel('Wind plus solar energy ('+txtlabel+') [TWh/yr]')
     ylabel('Storage volume [GWh]')
     
     pp = [Rectangle((0, 0), 1, 1, color=c,lw=1) for c in color]
     txtlabels = ['0 - 0.35 TWh','0.35 - 1.7 TWh',' >1.7 TWh']
 
-    leg = legend(pp,txtlabels,loc='upper left',ncol=2,title='Surplus after storage');
-    ltext  = leg.get_texts();
-    setp(ltext, fontsize='small')    # the legend text fontsize
+    legend(pp,txtlabels,loc='upper left',ncol=2,title='Surplus after storage');
 
     tight_layout()
     save_file_name = 'plot_value_of_storage_'+savelabel+'_'+ISO+'.pdf'
@@ -707,37 +766,38 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     
     ## Storage throughput per volume
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
     
-    intervals = [0,10,50,100,200,300,400]
+    intervals = [0,10,50,100,150,200,300]
     pp_c = contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Storage_output*365*24/CS_,intervals,cmap=cm.jet)
     
-    axvline(.25*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.5*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(.75*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-    axvline(1.*mean(L)*365*24/1e3,ls='--',color='k',lw=1)
-
-    text(.25*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'25%',weight='semibold',fontsize=10,ha='right')
-    text(.5*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'50%',weight='semibold',fontsize=10,ha='right')
-    text(.75*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'75%',weight='semibold',fontsize=10,ha='right')
-    text(1.0*mean(L)*365*24/1e3-.3,.1*amax(CS_*mean(L)),r'100%',weight='semibold',fontsize=10,ha='right')
+    dx = 0.02*annual_TWh
+    y = amax(CS)*mean(L)/6.
+    plot_vertical_line_and_label(0.25*annual_TWh,y,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,y,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,y,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,y,r'100%',dx)
     
-    xlabel('Wind plus solar energy ('+txtlabel+') [TWh]')
+    xlabel('Wind plus solar energy ('+txtlabel+') [TWh/yr]')
     ylabel('Storage volume [GWh]')    
     
     pp = [Rectangle((0, 0), 1, 1, color=pp_c_.get_facecolor()[0],lw=1) for pp_c_ in pp_c.collections]
     intervals = intervals[:len(pp)]
     txtlabels = concatenate([['{0:.0f} - {1:.0f}'.format(intervals[i],intervals[i+1]) for i in arange(len(intervals)-1)],['>{0:.0f}'.format(intervals[-1])]])
 
-    leg = legend(pp,txtlabels,loc='upper left',ncol=2,title='Storage cycle number per year');
-    ltext  = leg.get_texts();
-    setp(ltext, fontsize='small')    # the legend text fontsize
+    legend(pp,txtlabels,loc='upper left',ncol=2,title=r'Cycle count [yr$^{-1}$]');
     
     tight_layout()
     save_file_name = 'plot_value_of_storage_2_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
+
+
+
+################################################################################################
+################################################################################################
+
+
+
 def get_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cycles=100, gain=0.90, alpha_w=None, eta_charge=1., eta_discharge=1.):
 
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -773,30 +833,50 @@ def get_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1,5), N_cy
     return CS_fit, P_in, P_out
 
 
-def get_color_and_linestyle(alpha_w,N_cycles):
+
+################################################################################################
+################################################################################################
+
+
+
+def get_color_and_linestyle(alpha_w,N_cycles=None,gamma=None):
 
     ## Pick color
     if alpha_w==None:
         color = 'k'
-        mixtxt = ' (opt. mix)'
+        mixtxt = ' (bal. opt. mix)'
     elif alpha_w==1:
         color = color_wind
-        mixtxt = ' (wind-only)'
+        mixtxt = ' (wind only)'
     else:
         color = 'g'
-
+    
     ## Pick line style
-    if N_cycles==50:
-        ls = '-'
-    elif N_cycles==100:
-        ls = ':'
+    if not N_cycles==None:
+        if N_cycles==50:
+            ls = '-'
+        elif N_cycles==100:
+            ls = '--'
+        else:
+            ls = '-.'
     else:
-        ls = '-.'
+        if gamma==.5:
+            ls = '-'
+        elif gamma==.75:
+            ls = '--'
+        else:
+            ls = '-.'
 
     return color, ls, mixtxt
 
+
+################################################################################################
+################################################################################################
+
+
+
 ##
-# plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,5))
+# plot_storage_buildup_fixed_cycle_number(gamma=linspace(0,1.05,51))
 #    
 def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), N_cycles=[50,100,200,50,100], gain=0.90, alpha_w=[None,None,None,1,1], eta_charge=1., eta_discharge=1., txtlabel='', savelabel=''):
 
@@ -871,7 +951,7 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
 
     axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=2050)
 
-    legend(loc='upper right',title=r'Cycle count [yr$^{-1}$]',ncol=1)
+    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=1)
 
     tight_layout()
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_ChargingPower_'+savelabel+'_'+ISO+'.pdf'
@@ -925,7 +1005,7 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
 
     axis(xmin=0,xmax=amax(gamma)*annual_TWh,ymin=0,ymax=850)
 
-    legend(loc='upper left',title=r'Cycle count [yr$^{-1}$]',ncol=1)
+    legend(loc='upper right',title=r'Cycle count [yr$^{-1}$]',ncol=1)
 
     tight_layout()
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_ChargingVsVolume_Ratio_'+savelabel+'_'+ISO+'.pdf'
@@ -958,6 +1038,12 @@ def plot_storage_buildup_fixed_cycle_number(ISO='DK', gamma=linspace(0,1.05,5), 
     save_file_name = 'plot_storage_buildup_fixed_cycle_number_DischargingVsVolume_Ratio_'+savelabel+'_'+ISO+'.pdf'
     save_figure(save_file_name)
     
+
+
+################################################################################################
+################################################################################################
+
+
     
 def plot_value_of_storage_alt(ISO='DK', gamma=[.25,.50,.75,1.00], CS=[1,15,30,60], alpha_w=None):
 
@@ -998,6 +1084,12 @@ def plot_value_of_storage_alt(ISO='DK', gamma=[.25,.50,.75,1.00], CS=[1,15,30,60
     save_file_name = 'plot_value_of_storage_'+ISO+'.pdf'
     save_figure(save_file_name)    
     
+
+
+################################################################################################
+################################################################################################
+
+
 
 def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=None,N_gamma=111,returnall=True):
 
@@ -1059,7 +1151,19 @@ def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=Non
     if returnall:
         return gamma, surplus, gamma_bar, surplus_bar
 
-def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Pure wind','Balancing optimal mix','Pure wind, 50 GWh storage','Balancing optimal mix, 50 GWh storage']):
+
+################################################################################################
+################################################################################################
+
+
+
+#   Wind vs wind-solar mix
+#   plot_surplus_bar_comp(alpha_w=[1,None],CS=[None,None],color_bar=[color_wind,color_opt],hatch_bar=[False,False],textlabels=['Wind only','Balancing optimal mix'])
+#
+#   With and without storage
+#   plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Wind only','Bal. opt. mix','Wind only + storage','Bal. opt. mix + storage'])
+#
+def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Wind only','Balancing optimal mix','Wind only, 50 GWh storage','Balancing optimal mix, 50 GWh storage']):
 
 
     #Load data
@@ -1072,14 +1176,8 @@ def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,
         gamma_[i], surplus_[i], gamma_bar_[i], surplus_bar_[i] = plot_surplus_bar(ISO,gamma_bar,alpha_w[i],CS[i],N_gamma,returnall=True)
     
         print diff(surplus_[i])/((gamma_[i][1]-gamma_[i][0])*annual_TWh)
-    
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
 
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     fill_between(gamma_[i]*annual_TWh,amax(surplus_,axis=0),amin(surplus_,axis=0),color=(.7,.7,.7))
 
@@ -1093,17 +1191,19 @@ def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,
         #plot(gamma_[i]*100,surplus_[i],'k-',lw=1.5,zorder=0)
         
         if hatch_bar[i]:
-            bars = bar(annual_TWh*(gamma_bar_[i] + 1.20*bw/len(alpha_w)*(i-.5*len(alpha_w)+.5)+0.1*bw/len(alpha_w)),surplus_bar_[i],align='center',width=bw*annual_TWh/len(alpha_w),color='k', fc=color_bar[i], hatch="/",label=textlabels[i])
+            bars = bar(annual_TWh*(gamma_bar_[i] + 1.20*bw/len(alpha_w)*(i-.5*len(alpha_w)+.5)+0.1*bw/len(alpha_w)),surplus_bar_[i],align='center',width=bw*annual_TWh/len(alpha_w),color='k', fc=color_bar[i], hatch="//",label=textlabels[i])
         else:
             bars = bar(annual_TWh*(gamma_bar_[i] + 1.20*bw/len(alpha_w)*(i-.5*len(alpha_w)+.5)+0.1*bw/len(alpha_w)),surplus_bar_[i],align='center',width=bw*annual_TWh/len(alpha_w),color=color_bar[i],label=textlabels[i])
 
     
 
-    axis(xmin=0,xmax=amax(gamma_bar*annual_TWh)+.10*annual_TWh,ymin=0,ymax=1.0*amax(surplus_bar_)+1)
+    #axis(xmin=0,xmax=amax(gamma_bar*annual_TWh)+.10*annual_TWh,ymin=0,ymax=1.0*amax(surplus_bar_)+1)
+    axis(xmin=0,xmax=amax(gamma_bar*annual_TWh)+.10*annual_TWh,ymin=0,ymax=12.5)
+    
     #xticks(gamma_bar*100,['{0:.0f}%'.format(x) for x in gamma_bar*100],va='top')
     xticks(concatenate([[0],gamma_bar])*annual_TWh,['{0:.1f}'.format(x) for x in concatenate([[0],gamma_bar])*annual_TWh],va='top')
     xlabel(r'Wind plus solar energy [TWh/yr]')
-    ylabel('Total surplus [TWh/yr]')
+    ylabel('VRE surplus [TWh/yr]')
 
     ax=gca()
     ax.spines['top'].set_color('none')
@@ -1115,9 +1215,16 @@ def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
     
-    tight_layout()
+    tight_layout(pad=0.2)
     save_file_name = 'plot_surplus_bar_comp_'+ISO+'_CS_'+str(CS)+'.pdf'
     save_figure(save_file_name)
+
+
+
+################################################################################################
+################################################################################################
+
+
 
 def autolabel_bars(rects,ax,heighttxt=r'{0:0.1f}',scale_factors=1):
     # attach some text labels
@@ -1131,6 +1238,12 @@ def autolabel_bars(rects,ax,heighttxt=r'{0:0.1f}',scale_factors=1):
         height = rect.get_height()
         ax.text(rect.get_x()+rect.get_width()/2., height/2., heighttxt.format(height*scale_factor),
                 ha='center', va='center',backgroundcolor='w')
+
+
+################################################################################################
+################################################################################################
+
+
 
 def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True):
 
@@ -1159,6 +1272,12 @@ def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True)
     solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
 
     return L, wind_local, solar_local, curtailment, filling, extraction
+
+
+
+################################################################################################
+################################################################################################
+
 
 
 # Jan. 2000:
@@ -1245,6 +1364,12 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
     save_file_name = 'plot_hourly_generation_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
 
+
+################################################################################################
+################################################################################################
+
+
+
 # plot_hourly_generation_alt(alpha_w=1.,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, wind only',label='week_wind')
 # plot_hourly_generation_alt(alpha_w=None,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt='Spring week, optimal wind and solar mix',label='week_optimal')
 #
@@ -1257,14 +1382,30 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
 #
 #   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_no_storage')
 #
-#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_no_gain',CS=7.4)
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_no_gain',CS=2.54)
 #
-#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_100',gain_storage=.99999,CS=7.4)
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_100',gain_storage=.99999,CS=2.54)
 #
-#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_90',gain_storage=.9,CS=7.4)
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_90',gain_storage=.9,CS=2.54)
 #
-#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_99',gain_storage=.99,CS=7.4)
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_storage_gain_99',gain_storage=.99,CS=2.54)
 
+### DK paper
+#
+#   plot_hourly_generation_alt(alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_no_storage')
+#
+#
+#   plot_hourly_generation_alt(alpha_w=1,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_wind_only_no_storage')
+#
+#   plot_hourly_generation_alt(ISO='DK-hist',alpha_w=1,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_wind_only_hist')
+#
+#
+#   plot_hourly_generation_alt(ISO='DK-hist',alpha_w=None,gamma=.75,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_optimal_hist')
+#
+#   plot_hourly_generation_alt(ISO='DK-hist',alpha_w=1,gamma=.4,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_wind_only_hist_40p')
+#
+#   plot_hourly_generation_alt(ISO='DK-hist',alpha_w=1,gamma=.25,date_start=datestr2num('3-6-2000'),N_days=7,monday_offset=7,titletxt=None,label='week_wind_only_hist_25p')
+#
 def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=datestr2num('3-6-2000'), N_days=7, monday_offset=7, titletxt='Spring week', label='TestFigure', P_in=None, P_out=None, gain_storage=None, eta_in = 1., eta_out = 1., fancy_storage=False):
 
     #Load data
@@ -1302,7 +1443,7 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     print 'sum(curtailment), sum(filling), sum(extraction), sum(wind_local), sum(solar_local)'
     print sum(curtailment), sum(filling), sum(extraction), sum(wind_local), sum(solar_local)
 
-    close(1); figure(1); clf()
+    plt.close(1); plt.figure(1); plt.clf()
 
     fill_between(t[mask],wind_local[mask],color=color_wind,edgecolor=color_edge,lw=1)
     fill_between(t[mask],wind_local[mask]+solar_local[mask],wind_local[mask],color=color_solar,edgecolor=color_edge,lw=1)
@@ -1311,6 +1452,8 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
     fill_between(t[mask],wind_local[mask]+solar_local[mask]+filling[mask]+curtailment[mask],wind_local[mask]+solar_local[mask]+filling[mask],color='r',edgecolor=color_edge,lw=1)
     
     p.set_facecolors("none")
+
+    plt.plot(t[mask],np.amax(L)*np.ones_like(t[mask]),'k--')
 
     from matplotlib.patches import PathPatch
     for path in p.get_paths():
@@ -1328,7 +1471,7 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
 
     pp_load = plot(t[mask],L[mask],color='k',lw=1.5)
 
-    axis(xmin=t[mask[0]],xmax=t[mask[-1]],ymin=0,ymax=1.9*mean(L))
+    axis(xmin=t[mask[0]],xmax=t[mask[-1]],ymin=0,ymax=9.1)#1.9*mean(L))
 
     ylabel('Power [GW]')
 
@@ -1338,18 +1481,24 @@ def plot_hourly_generation_alt(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_st
 
     if CS==None:
         pp = [pp_load[0],pp_wind,pp_solar,pp_curtailment]
-        txtlabels = ['Load ({0})'.format(ISO),'Wind','Solar','Surplus']
+        txtlabels = ['Load'.format(ISO),'Wind','Solar','VRE-surplus']
         leg = legend(pp,txtlabels,loc='upper left',ncol=3,title=titletxt);
     else:
-        pp = [pp_load[0],pp_filling,pp_wind,pp_curtailment,pp_solar,pp_storage]
-        txtlabels = ['Load ({0})'.format(ISO),'Charging','Wind','Discharging','Solar','Rem. surplus']    
+        pp = [pp_load[0],pp_filling,pp_wind,pp_storage,pp_solar,pp_curtailment]
+        txtlabels = ['Load'.format(ISO),'Charging','Wind','Discharging','Solar','Rem. surplus']    
         leg = legend(pp,txtlabels,loc='upper left',ncol=3,title=titletxt);
     ltext  = leg.get_texts();
     setp(ltext, fontsize='small')    # the legend text fontsize
 
-    tight_layout()
+    tight_layout(pad=0.2)
     save_file_name = 'plot_hourly_generation_alt_'+ISO+'_'+label+'.pdf'
     save_figure(save_file_name)
+
+
+################################################################################################
+################################################################################################
+
+
 
 # plot_monthly_summary('DK',gamma=0.75,alpha_w=None,label='optimal')
 # plot_monthly_summary('DK',gamma=0.75,alpha_w=1,label='wind')
@@ -1370,6 +1519,7 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    
 
     if alpha_w==None:
         alpha_w = get_optimal_mix_balancing(L, Gw, Gs, gamma)[0]
@@ -1586,7 +1736,11 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     save_figure(save_file_name)
     
     
-    
+ 
+################################################################################################
+################################################################################################
+
+   
 
 ###############
 ### Tools: ####
@@ -1631,6 +1785,12 @@ def get_optimal_mix_storage(L, GW, GS, gamma=1., p_interval=0.01, returnall=Fals
 		return E_H(alpha_w_opt), alpha_w_opt
 
 
+
+################################################################################################
+################################################################################################
+
+
+
 def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None,returnall=False):
 
 	L, GW, GS, gamma, alpha = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2), array(gamma,ndmin=1), array(alpha,ndmin=1)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
@@ -1658,6 +1818,12 @@ def get_balancing(L, GW, GS, gamma=1, alpha=1., CS=None,returnall=False):
 	else:
 		return Res_load_sum
 
+
+################################################################################################
+################################################################################################
+
+
+
 def get_mismatch(L, GW, GS, gamma=1, alpha_w=1.,CS=None):
 
     L, GW, GS, gamma, alpha_w = array(L,ndmin=2), array(GW,ndmin=2), array(GS,ndmin=2), array(gamma,ndmin=1), array(alpha_w,ndmin=1)  #Ensure minimum dimension to 2 to alow the weighed sum to be calculated correctly.
@@ -1674,6 +1840,12 @@ def get_mismatch(L, GW, GS, gamma=1, alpha_w=1.,CS=None):
         return mismatch(alpha_w,gamma)
     else:
         return get_policy_2_storage(mismatch(alpha_w,gamma),storage_capacity = CS)[0]
+
+
+################################################################################################
+################################################################################################
+
+
 
 def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01, CS=None, returnall=False, normalized=True):
     """Wraper for get_optimal_mix_balancing(). This function allows gamma to be an array."""
@@ -1696,6 +1868,12 @@ def get_optimal_path_balancing(L, GW, GS, gamma=linspace(0,1,5), p_interval=0.01
             alpha_w_opt[i] = get_optimal_mix_balancing(L, GW, GS, gamma[i], p_interval, CS, returnall, normalized)
         
         return alpha_w_opt
+
+
+################################################################################################
+################################################################################################
+
+
         
 def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True):
     """ Old version of get_optimal_mix()"""
@@ -1705,6 +1883,12 @@ def get_optimal_mix_balancing(L, GW, GS, gamma=1., p_interval=0.01, CS=None, ret
         return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind)[:-1]
     else:
         return get_optimal_mix(L, GW, GS, gamma, p_interval, CS, returnall, normalized, DefaultWind)
+
+
+################################################################################################
+################################################################################################
+
+
 
 def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=False, normalized=True, DefaultWind=True):
 
@@ -1775,6 +1959,12 @@ def get_optimal_mix(L, GW, GS, gamma=1., p_interval=0.01, CS=None, returnall=Fal
     else:
         return alpha_w_opt
 
+
+################################################################################################
+################################################################################################
+
+
+
 #
 # get_min_storage_cap(L, Gw, Gs, gamma=1, alpha_w=1., CS=6)
 #
@@ -1828,6 +2018,12 @@ def get_min_storage_cap(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-4):
     return Res_load_sum, P_in_, P_out_
 
 
+
+################################################################################################
+################################################################################################
+
+
+
 def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=None, P_out=None, fancy_storage=False):
     """ This function behaves like Morten's get_policy_2_storage(). However, it allows limiting the charging and discharging capacities of the storage. """
     
@@ -1852,6 +2048,13 @@ def get_policy_2_storage_modified(mismatch, eta_in=1., eta_out=1., CS=NaN, P_in=
         
     ## REturns the reduced mismatch and the storage energy capacity that whas actually used (0<=CS_used<=CS).
     return mismatch_r, CS_used
+
+
+################################################################################################
+################################################################################################
+
+
+
 
 #
 # get_min_storage_cap_alt(L, Gw, Gs, gamma=1, alpha_w=1., CS=6)
@@ -1920,6 +2123,12 @@ def get_min_storage_cap_alt(L, GW, GS, gamma=1, alpha_w=1., CS=None, acc=1e-2,re
         return Storage_benefit, P_in_, P_out_
 
 
+################################################################################################
+################################################################################################
+
+
+
+
 #  plot_min_storage_cap(gamma=linspace(0,1.05,21),alpha_w=None,CS=6,acc=1e-8,txtlabel='optimal mix',savelabel='acc1e-8_OptMix')
 #  plot_min_storage_cap(gamma=linspace(0,1.05,21),alpha_w=None,CS=6,acc=1e-6,txtlabel='optimal mix',savelabel='acc1e-6_OptMix')
 #  plot_min_storage_cap(gamma=linspace(0,1.05,21),alpha_w=None,CS=6,acc=1e-3,txtlabel='optimal mix',savelabel='acc1e-3_OptMix')
@@ -1982,14 +2191,20 @@ def plot_min_storage_cap(ISO='DK', gamma=linspace(0,1.05,11), alpha_w=1., CS=6, 
     tight_layout()
     save_file_name = 'plot_min_storage_cap_'+savelabel+'_'+ '10xCS{0:0.0f}h'.format(10*CS) +'_'+ISO+'.pdf'
     save_figure(save_file_name)
+
+
+################################################################################################
+################################################################################################
+
+
     
 #   2013:
 #
-#   plot_min_storage_cap_summary(gamma=linspace(0,1.05,31))
+#   plot_min_storage_cap_summary(gamma=np.linspace(0,1.05,31))
 #
-#   plot_min_storage_cap_summary(gamma=linspace(0,1.05,31),CS=.254)
+#   plot_min_storage_cap_summary(gamma=np.linspace(0,1.05,31),CS=.254)
 #
-def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.9], linestyle=['-',':'], CS=2.54, txtlabel='', savelabel=''):
+def plot_min_storage_cap_summary(ISO='DK', gamma=np.linspace(0,1.05,5), gain=[.99,.9], linestyle=['-','--'], CS=2.54, txtlabel='', savelabel=''):
     """Compares wind only and optimal mix scenarios"""
 
     #Load data
@@ -2018,31 +2233,31 @@ def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.
         Res_load_sum_wind[i], P_in_wind, P_out_wind = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_wind, CS, acc)
         P_in_wind_[i], P_out_wind_[i] = mean(P_in_wind.transpose(),axis=0), mean(P_out_wind.transpose(),axis=0)
       
-    max_y = 1.2*mean(L)*amax(concatenate([P_in_opt_,P_out_opt_,P_in_wind_,P_out_wind_]))
+    max_y = 1e3*1.2*mean(L)*amax(concatenate([P_in_opt_,P_out_opt_,P_in_wind_,P_out_wind_]))
       
     ### Chargeing storage                      
     close(1); figure(1); clf()
 
     #plot(gamma,balancing_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'{0:.0f}% (opt. mix)'.format(gain[i]*100))
+        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_in_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'{0:.0f}% (bal. opt. mix)'.format(gain[i]*100))
 
     #plot(gamma*mean(L)*365*24/1e3,Res_load_sum_opt[0],'-',color=color_wind,lw=3, label='Wind')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'{0:.0f}% (wind-only)'.format(gain[i]*100))
+        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_in_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'{0:.0f}% (wind only)'.format(gain[i]*100))
 
     dx = 0.02*annual_TWh
-    plot_vertical_line_and_label(0.25*annual_TWh,max_y/3.,r'25%',dx)
-    plot_vertical_line_and_label(0.5*annual_TWh,max_y/3.,r'50%',dx)
-    plot_vertical_line_and_label(.75*annual_TWh,max_y/3.,r'75%',dx)
-    plot_vertical_line_and_label(1.*annual_TWh,max_y/3.,r'100%',dx)
+    plot_vertical_line_and_label(0.25*annual_TWh,max_y/6.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,max_y/6.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,max_y/6.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,max_y/6.,r'100%',dx)
 
     axis(xmin=0,xmax=amax(gamma*mean(L)*365*24/1e3),ymin=0,ymax=max_y)
     
-    ylabel('Charging power [GW]')
+    ylabel('Charging power [MW]')
     xlabel('Wind plus solar energy [TWh/yr]')
     
-    legend(loc='upper left',ncol=1,title='Storage gain');
+    legend(loc='upper left',ncol=1,title='gain');
 
     #add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]')
     
@@ -2055,24 +2270,24 @@ def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.
     
     #plot(gamma,excess_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_out_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'{0:.0f}% (opt. mix)'.format(gain[i]*100))    
+        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_out_opt_[i],ls=linestyle[i],lw=1,color='k',label=r'{0:.0f}% (bal. opt. mix)'.format(gain[i]*100))    
     
     #plot(gamma,excess_power_mean_wind,'-',color=color_wind,lw=3, label='Wind')
     for i in arange(len(gain)):
-        plot(gamma*mean(L)*365*24/1e3,mean(L)*P_out_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'{0:.0f}% (wind-only)'.format(gain[i]*100))
+        plot(gamma*mean(L)*365*24/1e3,1e3*mean(L)*P_out_wind_[i],ls=linestyle[i],lw=1.5,color=color_wind,label=r'{0:.0f}% (wind only)'.format(gain[i]*100))
     
     dx = 0.02*annual_TWh
-    plot_vertical_line_and_label(0.25*annual_TWh,max_y/3.,r'25%',dx)
-    plot_vertical_line_and_label(0.5*annual_TWh,max_y/3.,r'50%',dx)
-    plot_vertical_line_and_label(.75*annual_TWh,max_y/3.,r'75%',dx)
-    plot_vertical_line_and_label(1.*annual_TWh,max_y/3.,r'100%',dx)       
+    plot_vertical_line_and_label(0.25*annual_TWh,max_y/6.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,max_y/6.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,max_y/6.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,max_y/6.,r'100%',dx)       
                 
     axis(xmin=0,xmax=amax(gamma*mean(L)*365*24/1e3),ymin=0,ymax=max_y)
 
-    ylabel('Discharging power [GW]')
+    ylabel('Discharging power [MW]')
     xlabel('Wind plus solar energy [TWh/yr]')
 
-    legend(loc='upper left',ncol=1,title='Storage gain');
+    legend(loc='upper left',ncol=1,title='gain');
 
     #add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]')
 
@@ -2080,11 +2295,17 @@ def plot_min_storage_cap_summary(ISO='DK', gamma=linspace(0,1.05,3), gain=[.99,.
     save_file_name = 'plot_min_storage_cap_summary_discharging_'+savelabel+'_'+ '10xCS{0:0.0f}h'.format(10*CS) +'_'+ISO+'.pdf'
     save_figure(save_file_name)    
 
+
+################################################################################################
+################################################################################################
+
+
+
 #
 #   plot_min_storage_cap_fixed_gamma_summary( gamma=.75)
-#   plot_min_storage_cap_fixed_gamma_summary( gamma=.75,gain=array([.9,.99,1.]))
+#   plot_min_storage_cap_fixed_gamma_summary( gamma=.75,gain=array([0,.9,.99,1-1e-8]))
 
-def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,111), CS=[.254,2.54,7.6], linestyle=['-','--','-.',':'], txtlabel='', savelabel='',ISO='DK'):
+def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,111), CS=2.54, linestyle=['-','--','-.',':'], txtlabel='', savelabel='',ISO='DK'):
     
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -2093,40 +2314,41 @@ def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,1
     alpha_w_opt, alpha_w_opt_1p_interval, res_load_sum_0, mismatch_opt, res_load_sum_1p = get_optimal_path_balancing(L, Gw, Gs, gamma, CS=None, returnall=True)
     alpha_w_wind = 1.
     
-    Res_load_sum_opt, Res_load_sum_wind = zeros(gain.shape), zeros(gain.shape)
-    P_in_opt, P_out_opt = zeros((len(gain),2)), zeros((len(gain),2))
-    P_in_wind, P_out_wind = zeros((len(gain),2)), zeros((len(gain),2))
+    Res_load_sum_opt, Res_load_sum_wind = np.zeros(gain.shape), np.zeros(gain.shape)
+    P_in_opt, P_out_opt = np.zeros((len(gain),2)), np.zeros((len(gain),2))
+    P_in_wind, P_out_wind = np.zeros((len(gain),2)), np.zeros((len(gain),2))
     
     for i in arange(len(gain)):
         
         acc = 1. - gain[i]
         
-        Res_load_sum_opt[i], P_in_opt[i], P_out_opt[i] = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_opt, CS[1], acc)
-        Res_load_sum_wind[i], P_in_wind[i], P_out_wind[i] = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_wind, CS[1], acc)
+        Res_load_sum_opt[i], P_in_opt[i], P_out_opt[i] = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_opt, CS, acc)
+        Res_load_sum_wind[i], P_in_wind[i], P_out_wind[i] = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w_wind, CS, acc)
     
-    max_y = 1.2*mean(L)*amax(concatenate([P_in_opt,P_out_opt,P_in_wind,P_out_wind]))
+    max_y = 1e3*1.2*mean(L)*amax(concatenate([P_in_opt,P_out_opt,P_in_wind,P_out_wind]))
     
-    close(1); figure(1); clf()
+    plt.close(1); plt.figure(1); plt.clf()
     
-    plot(100*gain,1e3*mean(L)*mean(P_in_opt.transpose(),axis=0),'k-',label='Charging (opt. mix)')
-    plot(100*gain,1e3*mean(L)*mean(P_out_opt.transpose(),axis=0),'k:',label='Discharging (opt. mix)')
+    plt.plot(100*gain,1e3*mean(L)*mean(P_in_opt.transpose(),axis=0),'k-',label='Charging (bal. opt. mix)')
+    plt.plot(100*gain,1e3*mean(L)*mean(P_out_opt.transpose(),axis=0),'k--',label='Discharging (bal. opt. mix)')
     
-    plot(100*gain,1e3*mean(L)*mean(P_in_wind.transpose(),axis=0),'-',lw=1.5,color=color_wind,label='Charging (wind-only)')
-    plot(100*gain,1e3*mean(L)*mean(P_out_wind.transpose(),axis=0),':',lw=1.5,color=color_wind,label='Discharging (wind-only)')
+    plt.plot(100*gain,1e3*mean(L)*mean(P_in_wind.transpose(),axis=0),'-',lw=1.5,color=color_wind,label='Charging (wind only)')
+    plt.plot(100*gain,1e3*mean(L)*mean(P_out_wind.transpose(),axis=0),'--',lw=1.5,color=color_wind,label='Discharging (wind only)')
     
-    xlabel(r'Gain [%]')
-    ylabel('Power [MW]')
+    plt.xlabel(r'gain [%]')
+    plt.ylabel('Power [MW]')
     
-    axvline(90,ls='--',color='k',lw=1,alpha=.75)
-    text(90-2,max_y*2/3.,r'90%',weight='semibold',ha='right')
+    plt.axvline(90,ls='--',color='k',lw=1,alpha=.75)
+    plt.text(90-2,max_y*2/3.,r'90%',weight='semibold',ha='right')
     
-    axis(xmin=0,xmax=100,ymin=0,ymax=max_y)
+    plt.axis(xmin=0,xmax=100,ymin=0)
     
-    legend(loc='upper left',ncol=1);
-    #add_duplicate_yaxis(gcf(),unit_multiplier=1./mean(L),label='[av.l.h.]',tickFormatStr='%.2f')
+    plt.legend(loc='upper left',ncol=1);
         
-    tight_layout()
-    save_file_name = 'plot_min_storage_cap_fixed_gamma_summary_'+'100x_gamma_{0:.0f}'.format(100*gamma)+'_'+'10xCS{0:0.0f}h'.format(10*CS[1])+'_'+ISO+'.pdf'
+    plt.tight_layout()
+    
+    save_file_name = 'plot_min_storage_cap_fixed_gamma_summary_'+'100x_gamma_{0:.0f}'.format(100*gamma)+'_'+'10xCS{0:0.0f}h'.format(10*CS)+'_'+ISO+'.pdf'
+
     save_figure(save_file_name)  
     
     print 'Gain: ' + str(gain)
@@ -2135,7 +2357,14 @@ def plot_min_storage_cap_fixed_gamma_summary( gamma=.5, gain=linspace(0,1-1e-8,1
     print 'P_in_wind: ' + str(mean(L)*mean(P_in_wind.transpose(),axis=0))
     print 'P_out_wind: ' + str(mean(L)*mean(P_out_wind.transpose(),axis=0))
 
-#  get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.0,30])/3.94329, alpha_w=[1.], storage_gain=.90)
+
+
+################################################################################################
+################################################################################################
+
+
+
+#  get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.0,3])/3.94329, alpha_w=[1.], storage_gain=.90)
 #
 def get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.1,1.,10,30,nan])/3.94329, alpha_w=None, storage_gain=.90):
     """ All numbers are per year. CS=NaN gives results for seasonal storage at the relevant mix. alpha_w=None is balancing optimal mix, alpha_w=NaN is seasonal optimal mix."""
@@ -2161,6 +2390,11 @@ def get_storage_summary_table(ISO='DK',gamma=[.5,.75,1.],CS=array([0.1,1.,10,30,
         
         #print E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w, CS
         #print ' '
+
+
+################################################################################################
+################################################################################################
+
         
 def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.99,country_data=None):   
     """CS=NaN gives results for seasonal storage at the relevant mix. alpha_w=None is balancing optimal mix, alpha_w=NaN is seasonal optimal mix. country_data=(t, L, Gw, Gs, datetime_offset, datalabel)"""
@@ -2192,12 +2426,17 @@ def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.
     ## Average hourly values are returned.
     return E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w, CS
 
+
+################################################################################################
+################################################################################################
+
+
 ##
 #
-# plot_seasonal_storage_singularity(gamma=linspace(0,1.25,51),alpha_w=[1,None])
+# plot_seasonal_storage_singularity(gamma=linspace(0,1.22,111),alpha_w=[1,None])
 #
 #        
-def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,1.25,5), alpha_w=[1,None,nan],textlabel=['Wind only','Bal. opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
+def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,1.22,5), alpha_w=[1,None,nan],textlabel=['Wind-only','Opt. mix','Seasonal opt. mix'],line_color=[color_wind,'k','k'],ls=['-','-','--']):
     """alpha_w: None=balancing optimal mix, NaN=Seasonal optimal mix"""
     
     ## Load data
@@ -2208,35 +2447,35 @@ def plot_seasonal_storage_singularity(ISO='DK', gamma=linspace(0,1.25,5), alpha_
     
     for i in arange(len(alpha_w)):
         for j in arange(len(gamma)):
-            E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w_, CS[i][j] = get_storage_summary(ISO, gamma[j], alpha_w[i], CS=nan, storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))
-
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10    
+            E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w_, CS[i][j] = get_storage_summary(ISO, gamma[j], alpha_w[i], CS=nan, storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))    
       
     ### Plot storage singularity                      
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches(figure_size) 
       
     for i in arange(len(alpha_w)):
         plot(gamma*annual_TWh,CS[i]*mean(L),ls=ls[i],color=line_color[i],label=textlabel[i],lw=1.5)  
     
     dx = 0.02*annual_TWh
-    plot_vertical_line_and_label(0.25*annual_TWh,1000,r'25%',dx)
-    plot_vertical_line_and_label(0.5*annual_TWh,1000,r'50%',dx)
-    plot_vertical_line_and_label(.75*annual_TWh,1000,r'75%',dx)
-    plot_vertical_line_and_label(1.*annual_TWh,1000,r'100%',dx)
+    plot_vertical_line_and_label(0.25*annual_TWh,11500/6.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,11500/6.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,11500/6.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,11500/6.,r'100%',dx)
     
     xlabel('Wind plus solar energy [TWh/yr]')
-    ylabel('Min. seasonal storage volume [GWh]')
+    ylabel('Seasonal volume [GWh]')
       
-    legend(loc='Upper left')  
+    legend(loc='upper left')  
       
-    axis(xmin=0,xmax=amax(gamma*annual_TWh),ymin=0)  
+    axis(xmin=0,xmax=amax(gamma*annual_TWh),ymin=0,ymax=11500)  
       
     tight_layout()
     save_file_name = 'plot_seasonal_storage_singularity'+'_'+ISO+'.pdf'
     save_figure(save_file_name)  
+
+
+################################################################################################
+################################################################################################
+
 
 ##
 # plot_storage_balancing_synergy(CS=linspace(0,13,51))
@@ -2255,50 +2494,32 @@ def plot_storage_balancing_synergy(ISO='DK',CS=linspace(0,13,5),gamma=[.5,.75,1.
             E_seasonal_storage[k][i] = get_storage_summary(ISO, gamma[k], alpha_w[i], CS=NaN, storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))[4]
             
             for j in arange(len(CS)):
-                E_surplus, E_residual[k][i][j], N_cycles, E_charge, E_discharge[k][i][j], P_charge, P_discharge, alpha_w_, CS_ = get_storage_summary(ISO, gamma[k], alpha_w[i], CS=CS[j], storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))
-
-                
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10    
+                E_surplus, E_residual[k][i][j], N_cycles, E_charge, E_discharge[k][i][j], P_charge, P_discharge, alpha_w_, CS_ = get_storage_summary(ISO, gamma[k], alpha_w[i], CS=CS[j], storage_gain=1.00, country_data=(t, L, Gw, Gs, datetime_offset, datalabel))   
       
     ### Plot storage singularity                      
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches(figure_size) 
     
     for k in arange(len(gamma)):
         for i in arange(len(alpha_w)):
             
-            ## Pick color
-            if alpha_w[i]==None:
-                color = 'k'
-            elif alpha_w[i]==1:
-                color = color_wind
-            else:
-                color = 'g'
-                
-            ## Pick line style
-            if gamma[k]==.5:
-                ls = '-'
-            elif gamma[k]==.75:
-                ls = '--'
-            else:
-                ls = '-.'
+            color, ls, mixtxt = get_color_and_linestyle(alpha_w[i],gamma=gamma[k])
             
-            textlabel = r'{0:0.0f}%'.format(100*gamma[k])
+            textlabel = r'{0:0.0f}%'.format(100*gamma[k]) + mixtxt
             
             plot(CS*mean(L),100*E_discharge[k][i]/E_seasonal_storage[k][i],ls=ls,color=color,label=textlabel,lw=1.5)
    
+    #axhline(100,color='k',ls='-',alpha=.75)
    
-   
-    xlabel('Storage energy capacity [GWh]')
-    ylabel(r'Stored share of total surplus [%]')
+    xlabel('Storage volume [GWh]')
+    ylabel(r'Stored share of surplus [%]')
       
-    axis(xmin=0,xmax=amax(CS*mean(L)),ymin=0,ymax=100)
+    axis(xmin=0,xmax=amax(CS*mean(L)),ymin=0,ymax=101)
     
-    legend(loc='upper right',title='VRE gross share',ncol=2)  
+    leg = legend(loc='upper left',title='VRE gross share',ncol=2)  
+    frame = leg.get_frame()
+    frame.set_alpha(0.75)
           
+                      
     tight_layout()
     save_file_name = 'plot_storage_balancing_synergy'+'_'+ISO+'.pdf'
     save_figure(save_file_name)
@@ -2313,7 +2534,11 @@ def plot_vertical_line_and_label(x,y,textlabel=None,dx=None,ls='--',color='k',lw
     axvline(x,ls=ls,color=color,lw=lw,ymin=ymin,ymax=ymax,alpha=alpha)
     text(x-dx,y,textlabel,weight='semibold',ha='right')
     
-    
+
+################################################################################################
+################################################################################################
+
+
     
       
 ######
@@ -2409,7 +2634,10 @@ def valid_ISO(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/')
 
     table = np.load(path+filename)
     
-    return (ISO in table['ISO'])
+    if ISO=='DK-hist':
+        return 1
+    else:
+        return (ISO in table['ISO'])
     
 def ISO2ISET_country_codes(ISO='DK',filename='ISET2ISO_country_codes.npy',path='./settings/'):
 

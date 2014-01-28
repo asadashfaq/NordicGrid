@@ -735,15 +735,23 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     alpha_w_ = kron(array(ones_like(gamma),ndmin=2).transpose(),alpha_w_path)
     res_load_sum_0_ = kron(array(ones_like(gamma),ndmin=2).transpose(),res_load_sum_0)
     
-    Surplus_ = zeros_like(Gamma_)
+    Res_load_sum_ = np.zeros_like(Gamma_)
     for i in arange(len(Gamma_.flat)):
-        ## XXX: In fact, res_load_sum is returned.
-        Surplus_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i], eta_in=eta_in, eta_out=eta_out)[0]/len(L) + 0.001
+        ## The value here is normalized by the number of hours in L.
+        Res_load_sum_.flat[i] = get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i], eta_in=eta_in, eta_out=eta_out)[0]/len(L) + 0.001
 
-    ## XXX: Gamma - load covered by VRES = surplus VRES (not corrected for eta_in, eta_out). (hourly average values, normalized)
-    Deviation_from_target = Gamma_ - (1. - Surplus_)
-    ## XXX: Deviation_from_target[0] is the values for no storage (assuming that CS includes 0).
-    Storage_output = kron(array(ones_like(CS),ndmin=2).transpose(),Deviation_from_target[0]) - Deviation_from_target
+    ## Res_load_sum_[0] is the values for no storage (assuming that CS includes 0). Storage_output is the value after applying both eta_in and eta_out.
+    Storage_output = kron(array(ones_like(CS),ndmin=2).transpose(),Res_load_sum_[0]) - Res_load_sum_
+    
+    ## Annual cycle count.
+    Storage_cycle_count = (Storage_output*365*24/eta_out)/CS_
+
+    ## What was originally feed into the storage.
+    Storage_input = Storage_output/eta_out/eta_in
+    
+    ## Total surplus
+    Surplus_0 = Gamma_ - (1 - kron(array(ones_like(CS),ndmin=2).transpose(),Res_load_sum_[0]))
+    Surplus = Surplus_0 - Storage_input
 
     from matplotlib.colors import ListedColormap, BoundaryNorm
     color=[(0.53,0.73,0.37), (1.,.82,.20), bg_color]
@@ -752,7 +760,7 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     
     close(1); figure(1); clf()
 
-    contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Deviation_from_target,[0,.01,0.05,1.],cmap=cmap,norm=norm)
+    contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Surplus, [0,.01,0.05,1.], cmap=cmap, norm=norm)
 
     dx = 0.02*annual_TWh
     y = amax(CS)*mean(L)/6.
@@ -777,7 +785,7 @@ def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,
     close(1); figure(1); clf()
     
     intervals = [0,10,50,100,150,200,300]
-    pp_c = contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Storage_output*365*24/CS_,intervals,cmap=cm.jet)
+    pp_c = contourf(Gamma_*mean(L)*365*24/1e3, CS_*mean(L), Storage_cycle_count,intervals,cmap=cm.jet)
     
     dx = 0.02*annual_TWh
     y = amax(CS)*mean(L)/6.

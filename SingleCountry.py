@@ -712,7 +712,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 #   Hydrogen storage efficiencies: eta_in=0.4, eta_out=0.4
 #   =============
 #
-#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix_H2_storage', eta_in=0.4, eta_out=0.4)
+#   plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,51), CS=concatenate([[0],linspace(1e-2,14,50)]),alpha_w=None,txtlabel='opt. mix',savelabel='opt_mix_H2_storage', eta_in=0.6, eta_out=0.6)
 #
 #
 def plot_value_of_storage(ISO='DK', gamma=linspace(0,1.05,11), CS=linspace(0,27,11), alpha_w=None, txtlabel='', savelabel='', eta_in=1, eta_out=1):

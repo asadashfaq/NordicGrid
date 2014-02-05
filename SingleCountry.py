@@ -57,14 +57,9 @@ def plot_duration_curves(ISO='DK', gamma=[0,.25,.5,.75,1.], alpha_w=.8, CS=None,
         duration_residual_load[i], power_residual_load[i] = get_duration_curve_residual_load(ISO, gamma[i], alpha_w, CS, N_bins)
         duration_upregulation[i], power_upregulation[i] = get_duration_curve_upregulation(ISO, gamma[i], alpha_w, CS, N_bins)
         duration_downregulation[i], power_downregulation[i] = get_duration_curve_downregulation(ISO, gamma[i], alpha_w, CS, N_bins)
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
 
     ### Residual load
-    close(1);figure(1);clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,3.5])
+    close(1);figure(1);
     
     for i in arange(len(gamma)):
         plot(duration_residual_load[i],power_residual_load[i]*mean(L),label=str(gamma[i]))
@@ -208,14 +203,9 @@ def plot_phase_space_residual_load(ISO='DK', gamma=0, alpha_w=.8, CS=None):
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
 
     residual_load = get_positive(-get_mismatch(L, Gw, Gs, gamma, alpha_w,CS))
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
 
     ### Residual load
-    close(1);figure(1);clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,3.5])
+    close(1);figure(1);
     
     plot(residual_load[:-1],diff(residual_load),'.')
     
@@ -251,12 +241,7 @@ def plot_storage_balancing_synergy_old(ISO='DK', gamma=[.75,1.,1.25], CS=linspac
 
             balancing_mean[j][i] = get_positive(-mismatch_opt).mean()
 
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-
-    figure(1);clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,3.5])
+    close(1); figure(1);
     
     for j in arange(len(gamma)):
         plot(CS,balancing_mean[j] - gamma[j]*(gamma[j]<=1.))
@@ -295,14 +280,9 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
         #Wind only
         mismatch_wind = get_mismatch(L, Gw, Gs, gamma[i], alpha_w=1.,CS=CS)
         balancing_power_mean_wind[i], excess_power_mean_wind[i] = mean(get_positive(-mismatch_wind)), mean(get_positive(mismatch_wind))
-        balancing_power_quantiles_wind[i], excess_power_quantiles_wind[i] = mquantiles(get_positive(-mismatch_wind),quantiles), mquantiles(get_positive(mismatch_wind),quantiles)
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10    
+        balancing_power_quantiles_wind[i], excess_power_quantiles_wind[i] = mquantiles(get_positive(-mismatch_wind),quantiles), mquantiles(get_positive(mismatch_wind),quantiles)   
                 
-    figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([5.25,6])
+    close(1); figure(1);
     
     subplot(211)
     #Highlight ROI
@@ -317,8 +297,6 @@ def plot_country_balancing_at_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.
     plot(gamma,balancing_power_mean,'-',color=(.5,.5,.5),lw=2.5,label='Mean')
     for i in arange(len(quantiles)):
         plot(gamma,balancing_power_quantiles.transpose()[i],ls=linestyle[i],lw=1.5,color='k',label=r'{0:.0f}% quantile'.format(quantiles[i]*100))
-
-
 
     axis(xmin=0,xmax=amax(gamma),ymin=0,ymax=1.65)
     
@@ -428,15 +406,7 @@ def plot_country_optimal_mix_vs_gamma(ISO='DK', gamma=linspace(0,2.05,11), p_int
 
     res_load_sum_opt = res_load_sum_opt/len(L)
 
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-
-    close(1); figure(1); clf()
-
-    gcf().set_dpi(300)
-    #gcf().set_size_inches([5.25,6])
-    #gcf().set_size_inches([5.25,3.5])
-    gcf().set_size_inches([6.5,4.3])
+    close(1); figure(1);
     
     #Upper panel
     #ax1 = axes([.11,.565,.885,.42])
@@ -1101,21 +1071,16 @@ def plot_value_of_storage_alt(ISO='DK', gamma=[.25,.50,.75,1.00], CS=[1,15,30,60
     for i in arange(len(Gamma_.flat)):
         Surplus_.flat[i] = (res_load_sum_0_.flat[i] - get_balancing(L, Gw, Gs, Gamma_.flat[i], alpha_w_.flat[i], CS_.flat[i])[0])/len(L)*mean(L*365*24)/1e3
 
-
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
     
-    close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
+    close(1); figure(1);
 
 #    contourf(Gamma_, CS_, Surplus_,mean(L*365*24)/1e3*array([0,0.01,0.05,1]))
-    contourf(Gamma_, CS_, Surplus_)
+    plt.contourf(Gamma_, CS_, Surplus_)
 
-    xlabel('Gross share')
-    ylabel('Storage volume')
+    plt.xlabel('Gross share')
+    plt.ylabel('Storage volume')
     
-    colorbar()
+    plt.colorbar()
 
     tight_layout()
     save_file_name = 'plot_value_of_storage_'+ISO+'.pdf'
@@ -1145,11 +1110,8 @@ def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=Non
     
 
     #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
 
     close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     plot(gamma*100,surplus,'k-',lw=1.5,zorder=0)
     bars = bar(gamma_bar*100,surplus_bar,align='center',width=10,color='r')
@@ -1198,7 +1160,7 @@ def plot_surplus_bar(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=1,CS=Non
 #   plot_surplus_bar_comp(alpha_w=[1,None],CS=[None,None],color_bar=[color_wind,color_opt],hatch_bar=[False,False],textlabels=['Wind only','Balancing optimal mix'])
 #
 #   With and without storage
-#   plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Wind only','Bal. opt. mix','Wind only + storage','Bal. opt. mix + storage'])
+#   plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Wind only','Bal. opt. mix','Wind only, 50 GWh storage','Bal. opt. mix, 50 GWh storage'])
 #
 def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,None,1,None],CS=[None,None,12,12],N_gamma=21,bw = .10,color_bar=[color_wind,color_opt,color_wind,color_opt],hatch_bar=[False,False,True,True],textlabels=['Wind only','Balancing optimal mix','Wind only, 50 GWh storage','Balancing optimal mix, 50 GWh storage']):
 
@@ -1214,7 +1176,7 @@ def plot_surplus_bar_comp(ISO='DK',gamma_bar=array([.25,.50,.75,1.]),alpha_w=[1,
     
         print diff(surplus_[i])/((gamma_[i][1]-gamma_[i][0])*annual_TWh)
 
-    close(1); figure(1); clf()
+    close(1); figure(1); 
 
     fill_between(gamma_[i]*annual_TWh,amax(surplus_,axis=0),amin(surplus_,axis=0),color=(.7,.7,.7))
 
@@ -1282,7 +1244,7 @@ def autolabel_bars(rects,ax,heighttxt=r'{0:0.1f}',scale_factors=1):
 
 
 
-def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True):
+def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True, eta_charge = 1., eta_discharge = 1.):
 
     #Load data
     t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
@@ -1297,7 +1259,7 @@ def get_compare_VRES_load(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, silent=True)
     mismatch = (wind+solar) - L
     
     if CS!=None or CS==0:
-        mismatch_r = get_policy_2_storage(mismatch, eta_charge = 1., eta_discharge = 1., storage_capacity = CS)[0]
+        mismatch_r = get_policy_2_storage(mismatch, eta_charge, eta_discharge, storage_capacity = CS)[0]
     else:
         mismatch_r = mismatch
     
@@ -1356,13 +1318,7 @@ def plot_hourly_generation(ISO='DK', gamma=0.5, alpha_w=.5, CS=None, date_start=
     wind_local = wind - (curtailment+filling)*wind/(wind+solar+1e-10)
     solar_local = solar - (curtailment+filling)*solar/(wind+solar+1e-10)
 
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-
     close(1); figure(1); clf()
-
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
 
     fill_between(t[mask],wind_local[mask],color=color_wind,edgecolor=color_edge,lw=1)
     fill_between(t[mask],wind_local[mask]+solar_local[mask],wind_local[mask],color=color_solar,edgecolor=color_edge,lw=1)
@@ -1597,12 +1553,7 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
         curtail_sum[month-1] = sum(curtailment[find(t_month==month)])
         weight[month-1] = len(find(t_month==month))/float(len(t))
 
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-
-    close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
+    close(1); figure(1);
 
     #Monthly values
     pp_wind = bar(months,wind_sum*100/load_sum,color=color_wind)
@@ -1678,8 +1629,6 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     rc('font', family='sans-serif')
     matplotlib.rcParams['text.latex.preamble'] = '\usepackage{color}'
     
-    
-    
     close(1); figure(1); clf()
     gcf().set_dpi(300)
     gcf().set_size_inches([3,2])
@@ -1748,7 +1697,6 @@ def plot_monthly_summary(ISO='DK', gamma=.5, alpha_w=None, CS=None, titletxt='De
     #tight_layout()
     save_file_name = 'plot_single_bar_summary_alt_'+ISO+'_{0:0.0f}p_'.format(gamma*100)+label+'.pdf'
     save_figure(save_file_name)
-
 
     ### Single bar summary legend
     close(1); figure(1); clf()
@@ -2193,13 +2141,8 @@ def plot_min_storage_cap(ISO='DK', gamma=linspace(0,1.05,11), alpha_w=1., CS=6, 
     
     # Function
     Res_load_sum, P_in_, P_out_ = get_min_storage_cap_alt(L, Gw, Gs, gamma, alpha_w, CS, acc)
-    
-    #Set plot options	
-    matplotlib.rcParams['font.size'] = 10
-    
-    close(1); figure(1); clf()
-    gcf().set_dpi(300)
-    gcf().set_size_inches([6.5,4.3])
+
+    close(1); figure(1);
     
     plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_.transpose()[0],'k-',label='Filling (upper)')
     plot(gamma*mean(L)*365*24/1e3,mean(L)*P_in_.transpose()[1],'r-',label='Filling (lower)')
@@ -2464,6 +2407,123 @@ def get_storage_summary(ISO='DK', gamma=1., alpha_w=None, CS=nan, storage_gain=.
     return E_surplus, E_residual, N_cycles, E_charge, E_discharge, P_charge, P_discharge, alpha_w, CS
 
 
+################################################################################################
+################################################################################################
+
+#
+# To Klaus:
+# plot_gamma_storage_net_share_map(ISO='DK',gamma=np.linspace(0,1.65,21),alpha_w=1,N_storage_volume=21,savelabel='_wind_only')
+# plot_gamma_storage_net_share_map(ISO='DK',gamma=np.linspace(0,1.65,21),alpha_w=.8,N_storage_volume=21,savelabel='_80wind_20solar')
+#
+def plot_gamma_storage_net_share_map(ISO='DK',gamma=np.linspace(0,1.15,21),alpha_w=1,N_storage_volume=21,savelabel=''):
+
+    t, L, Gw, Gs, datetime_offset, datalabel = get_ISET_country_data(ISO)
+    
+    ## Calculate max volume
+    storage_volume_seasonal = get_storage_summary(ISO, gamma=1., alpha_w=alpha_w, CS=nan, storage_gain=1.)[8]
+    print 'Seasonal storage volume at gamma=1:', storage_volume_seasonal
+    
+    Gamma, Storage_volume = np.meshgrid(gamma,np.linspace(0,storage_volume_seasonal,N_storage_volume))
+    
+    Net_share = np.zeros_like(Gamma)
+    for i in np.arange(len(Gamma.flat)):
+    
+        Net_share.flat[i] = 1 - get_balancing(L, Gw, Gs, Gamma.flat[i], alpha=alpha_w, CS=Storage_volume.flat[i], returnall=False, eta_charge=1., eta_discharge=1.)/len(L)
+    
+    VRE_annual = Gamma*mean(L)*8760/1e3 #TWh/yr
+    Storage_out_annual = (Net_share - Net_share[0])*np.mean(L)*8760/1e3 #TWh/yr
+
+    for i in np.arange(Storage_volume.shape[1]):
+        sv = Storage_volume.transpose()[i]
+        so = Storage_out_annual.transpose()[i]
+        
+        for j in np.arange(1,len(sv)):
+            if not so[j]>so[j-1]:
+                sv[j] = sv[j-1]
+                
+        Storage_volume.transpose()[i] = sv
+    
+    ## Net share
+    close(1); figure(1)
+    
+    plt.contourf(VRE_annual, Storage_out_annual, Net_share, np.linspace(0,1,11), vmin=0, vmax=1)
+    
+    annual_TWh = np.mean(L)*8760/1e3
+    dx = 0.02*annual_TWh
+    max_y = np.amax(Storage_out_annual)
+    plot_vertical_line_and_label(0.25*annual_TWh,max_y/6.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,max_y/6.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,max_y/6.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,max_y/6.,r'100%',dx) 
+    
+    xlabel('VRE production [TWh/yr]')
+    ylabel('Storage output [TWh/yr]')
+    
+    plt.colorbar()
+
+    tight_layout()
+    save_file_name = 'plot_gamma_storage_net_share_map'+'_'+ISO+'.pdf'
+    save_figure(save_file_name)
+
+    ## Total cost of VRES and storage
+    close(1); figure(1)
+    
+    cost_storage = 75e6 #dkk per GWh energy capacity.
+    cost_wind = 1000e6 #dkk per TWh.
+    
+    Total_cost = (cost_storage*Storage_volume*mean(L) + cost_wind*VRE_annual)
+    
+    plt.contourf(VRE_annual, Storage_out_annual, Total_cost, 51)
+    
+    annual_TWh = np.mean(L)*8760/1e3
+    dx = 0.02*annual_TWh
+    max_y = np.amax(Storage_out_annual)
+    plot_vertical_line_and_label(0.25*annual_TWh,max_y/6.,r'25%',dx)
+    plot_vertical_line_and_label(0.5*annual_TWh,max_y/6.,r'50%',dx)
+    plot_vertical_line_and_label(.75*annual_TWh,max_y/6.,r'75%',dx)
+    plot_vertical_line_and_label(1.*annual_TWh,max_y/6.,r'100%',dx)
+    
+    xlabel('VRE production [TWh/yr]')
+    ylabel('Storage output [TWh/yr]')
+    
+    plt.colorbar()
+
+    tight_layout()
+    save_file_name = 'plot_gamma_storage_net_share_map'+'_'+ISO+'_total_cost.pdf'
+    save_figure(save_file_name)
+
+    ## Total cost of VRES and storage per TWh useful VRE
+    close(1); figure(1)
+    
+    Cost_per_net_share = Total_cost/(Net_share*mean(L)*8760/1e3)
+    
+    plt.contourf(VRE_annual, Storage_out_annual, Cost_per_net_share/1e9,51)
+    
+    cb = plt.colorbar()
+    cb.set_label('Billion DKK per TWh used')
+    
+    CS = plt.contour(VRE_annual, Storage_out_annual, Net_share, np.linspace(0,1,11)-1e-3,colors='k')
+    plt.clabel(CS, fontsize=9, inline=1, fmt='%1.1f')
+    
+    #CS = plt.contour(VRE_annual, Storage_out_annual, Cost_per_net_share/1e9,11,colors='k')
+    #plt.clabel(CS, fontsize=9, inline=1, fmt='%1.1f')
+    
+    
+    annual_TWh = np.mean(L)*8760/1e3
+    dx = 0.02*annual_TWh
+    max_y = np.amax(Storage_out_annual)
+    x_label = np.arange(0.25,np.amax(gamma),0.25)
+    for i in np.arange(len(x_label)):
+        plot_vertical_line_and_label(x_label[i]*annual_TWh,max_y*5/6.,r'{0:0.0f}%'.format(100*x_label[i]),dx)
+    
+    xlabel('VRE production [TWh/yr]')
+    ylabel('Storage output [TWh/yr]')
+
+    tight_layout()
+    save_file_name = 'plot_gamma_storage_net_share_map'+'_'+ISO+savelabel+'_cost_per_net_share_increase.pdf'
+    save_figure(save_file_name)
+    
+    
 ################################################################################################
 ################################################################################################
 
